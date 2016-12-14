@@ -11,7 +11,7 @@ import scipy.stats
 import copy
 
 
-class PertubrationGraph(object):
+class PerturbationGraph(object):
     """Populates a directed free energy perturbation graph"""
     def __init__(self, ):
         self._graph = None
