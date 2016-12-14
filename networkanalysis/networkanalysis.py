@@ -19,6 +19,8 @@ class PertubrationGraph(object):
     """Populates a directed free energy perturbation graph"""
     def __init__(self, ):
         self._graph = None
+        self._pathAverages = []
+        self._weightedPathAverages = []
 
 
     def populate_pert_graph(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight',float),('error',float))):
@@ -62,9 +64,9 @@ class PertubrationGraph(object):
                 graph.add_edge(v,u,weight=assymetric_w, error = assymetric_e)
         return graph
 
-    def save_average_paths(self, pathaverage, filename):
+    def save_average_paths(self, filename, pathAverages):
         f = open(filename, 'w')
-        for d in pathaverage:
+        for d in pathAverages:
             for k,v in d.iteritems():
                 if k == 'error':
                     error = v
@@ -74,9 +76,14 @@ class PertubrationGraph(object):
             f.write(str(r_energy_k)+', '+str(r_energy_v)+', '+str(error)+'\n')
         f.close()
 
-    def get_average_paths(self, target_node):
+    def compute_average_paths(self, target_node):
+        r"""
+        Parameters
+        ----------
+        target_node : string
+            node to which all possible paths are computed
+        """
         #Get all relative free energies with respect to node x
-        pathaverage = []
         for n in self._graph.nodes():
             paths = nx.shortest_simple_paths(self._graph,target_node , n)
             err_list = []
@@ -90,18 +97,62 @@ class PertubrationGraph(object):
                 sum_list.append(sum)
                 err_list.append(error)
                 error = np.sqrt(error)
-                print r'DDG for path %s is %f +/- %f kcal/mol' %(p, sum, error)
+                #print r'DDG for path %s is %f +/- %f kcal/mol' %(p, sum, error)
             avg_sum = np.mean(np.array(sum_list))
             avg_err = np.mean(np.array(err_list))
             avg_std = np.std(np.array(sum_list))
-            print ("Average sum for path to %s is %f " %(n,avg_sum))
+            #print ("Average sum for path to %s is %f " %(n,avg_sum))
             a = {str(n):avg_sum}
             a['error']=avg_std
             #a['error']=sqrt(avg_err)
-            pathaverage.append(a)
-            #avg_err = np.mean(np.array(err_list))
-            print "================"
-        return pathaverage
+            self._pathAverages.append(a)
+
+    def compute_weighted_avg_paths(self, target_node):
+        #Get all relative free energies with respect to node x
+        a = {target_node:0.0}
+        a['error']=0.0
+        self._weightedPathAverages.append(a)
+        for n in self._graph.nodes():
+            if n == target_node:
+                continue
+            #print "=============================="
+            #print "Path: "+str(n)+"~"+str(target_node)
+            paths = list(nx.shortest_simple_paths(self._graph,target_node , n))
+            #print "There are "+str(len(paths))+" simple paths."
+            err_list = []
+            sum_list = []
+            for p in paths:
+                summing = 0
+                error = 0.0
+                for node in range(len(p)-1):
+                    summing= summing+ self._graph.get_edge_data(p[node], p[node+1])['weight']
+                    error = error+self._graph.get_edge_data(p[node], p[node+1])['error']**2
+                sum_list.append(summing)
+                error = np.sqrt(error)
+                err_list.append(error)
+                #print 'path sum is: ' +str(summing)
+                #print 'path error is: '+str(error)
+            err_list = np.array(err_list)
+            sum_weights = np.sum(1.0/err_list)
+            #print 'sum weights: '+str(sum_weights)
+            #print 1.0/err_list
+            path_weights = (1.0/err_list)/sum_weights
+            #print path_weights
+            avg_sum = 0.0
+            avg_err = 0.0
+            for i in range(len(sum_list)):
+                s = sum_list[i]
+                avg_sum = avg_sum +(path_weights[i]*s)
+                avg_err = avg_err+path_weights[i]*err_list[i]**2
+            avg_err = np.sqrt(avg_err)
+            a = {str(n):avg_sum}
+            a['error']=avg_err
+            self._weightedPathAverages.append(a)
+            #print "path average is: "+str(np.mean(sum_list))
+            #print "path weighted average is: "+str(avg_sum)
+            #print "sum err is: " +str(avg_err)
+            #print "================"
+
 
     def get_cycles(self):
         #cycle closure
@@ -121,6 +172,20 @@ class PertubrationGraph(object):
     @property
     def graph(self):
         return self._graph
+
+    @property
+    def pathAverages(self):
+        r"""
+        Return
+        ------
+        pathAverages : dictionary
+            dictionary containing averaged free energies for each path, with paths weighted in the same way 
+        """
+        return self._pathAverages
+
+    @property
+    def weightedPathAverages(self):
+        return self._weightedPathAverages
 
 class FreeEnergyPlotter(object):
     """docstring for FreeEnergyPlotter"""
