@@ -7,9 +7,13 @@ __email__ = "antonia.mey@ed.ac.uk"
 
 import numpy as np
 import networkx as nx
+import matplotlib.pylab as plt
+import matplotlib
+import seaborn as sns
 import scipy.stats
 import copy
-
+sns.set_style("ticks")
+sns.set_context("notebook", font_scale = 2)
 
 class PertubrationGraph(object):
     """Populates a directed free energy perturbation graph"""
@@ -151,9 +155,6 @@ class PertubrationGraph(object):
 
 
     def get_cycles(self, max_length=4):
-        r"""
-        TODO: elaborate and find good way of saving this information 
-        """
         #cycle closure
         cyc = nx.simple_cycles(self._graph)
         for c in cyc:
@@ -187,6 +188,180 @@ class PertubrationGraph(object):
     def weightedPathAverages(self):
         return self._weightedPathAverages
 
+class FreeEnergyPlotter(object):
+    """docstring for FreeEnergyPlotter"""
+    def __init__(self, arg):
+        super(FreeEnergyPlotter, self).__init__()
+        self.arg = arg
+        
 
+    def plot_bar_plot(self, set_ddg, graph_est, keys):
+        r1_weight = []
+        r2_weight = []
+        labels = []
+        for e in keys:
+            for i in graph_ddg:
+                if i.has_key(e):
+                    r1_weight.append(i[e])
+        for e in keys:
+            for i in graph_est:
+                if i.has_key(e):
+                    r2_weight.append(i[e])
+        labels = keys
+
+        N = len(r1_weight)*2
+
+        ind = np.arange(0,N,2)  # the x locations for the groups
+        width = 0.35*2       # the width of the bars
+        fig, ax = plt.subplots(figsize=(8,6))
+
+        rects1 = ax.bar(ind, r1_weight, width, color=sns.xkcd_rgb["pale red"])
+        rects2 = ax.bar(ind + width, r2_weight, width, color=sns.xkcd_rgb["denim blue"])
+
+        # add some text for labels, title and axes ticks
+        ax.set_ylabel(r'$\Delta \Delta G$ in [kcal/mol]', fontsize=15)
+        ax.set_xticks(ind + width)
+        ax.set_xticklabels(labels, fontsize=15)
+
+        ax.legend((rects1[0], rects2[0]), ('experimental', 'computational'), fontsize=15)
+        sns.despine()
+
+    def plot_bar_plot_no_dic(self, r1_weight, r2_weight, keys):
+        labels = keys
+
+        N = len(r1_weight)*2
+
+        ind = np.arange(0,N)  # the x locations for the groups
+        width = 0.35*2       # the width of the bars
+        fig, ax = plt.subplots(figsize=(7,7))
+
+        rects1 = ax.bar(ind, r1_weight[:,0], width, yerr = r1_weight[:,1], color=sns.xkcd_rgb["pale red"])
+        rects2 = ax.bar(ind + width, r2_weight[:,0], width, yerr = r2_weight[:,1], color=sns.xkcd_rgb["denim blue"])
+
+        # add some text for labels, title and axes ticks
+        ax.set_ylabel(r'$\Delta \Delta G$ in [kcal/mol]', fontsize=20)
+        ax.set_xticks(ind + width)
+        ax.set_xticklabels(labels, fontsize=20)
+
+        #ax.legend((rects1[0], rects2[0]), ('experimental', 'computational'), fontsize=20)
+        sns.despine()
+
+    def plot_bar_plot_no_dic_graph2(self, r1_weight, r2_weight, r3_weight, keys):
+        labels = keys
+
+        N = len(r1_weight)*2
+
+        ind = np.arange(0,N,2)  # the x locations for the groups
+        width = 0.25*2       # the width of the bars
+        fig, ax = plt.subplots(figsize=(7,7))
+        print r1_weight
+        data1 = r2_weight[:,0]
+        data2 = r3_weight[:,0]
+        rects1 = ax.bar(ind, r1_weight, width, color=sns.xkcd_rgb["pale red"])
+        rects2 = ax.bar(ind + width, data1, width,yerr = r2_weight[:,1], color=sns.xkcd_rgb["denim blue"], error_kw={'ecolor':'black',    # error-bars colour
+                              'linewidth':2})
+        rects3 = ax.bar(ind + 2*width, data2, width, yerr = r3_weight[:,1], color='#759D70', error_kw={'ecolor':'black',    # error-bars colour
+                              'linewidth':2})
+
+        # add some text for labels, title and axes ticks
+        ax.set_ylabel(r'$\Delta \Delta G$ in [kcal/mol]', fontsize=20)
+        ax.set_xticks(ind + width+width*0.5)
+        ax.set_xticklabels(labels, fontsize=20)
+
+        #ax.legend((rects1[0], rects2[0]), ('experimental', 'computational'), fontsize=20)
+        sns.despine()
+
+    def plot_hist(self, edges, hist, label, color, alpha):
+        halfwidth = (edges[1]-edges[0])/2
+        centers= edges[:-1]+halfwidth
+        fig = plt.figure(figsize=(8,4))
+        plt.plot(centers, hist, color=color)
+        plt.fill_between(centers, hist, facecolor=color, alpha=alpha)
+        plt.xlabel(label)
+        plt.ylabel('P(%s)'%label)
+        sns.despine()
+
+class freeEnergyStats(object):
+    """docstring for freeEnergyStats"""
+    def __init__(self, arg):
+        super(freeEnergyStats, self).__init__()
+        self.arg = arg
+        
+
+    def calculate_pi(self, series1, series2):
+        sumwijcij = 0.0
+        sumwij = 0.0
+
+        keys = series1.keys()
+        keys.sort()
+
+        for i in range(0,len(keys)):
+            keyi = keys[i]
+            for j in range(i+1,len(keys)):
+                keyj = keys[j]
+                wij = abs(series1[keyj][0] - series1[keyi][0] )
+                # print "series0 j %s series 0 i %s wij %s i %s j %s" % (series[0][j],series[0][i],wij,i,j)
+                num =  (series1[keyj][0] - series1[keyi][0])
+                den =  (series2[keyj][0] - series2[keyi][0] )
+                #if den < 0.0001:
+                #    den = 0.001
+                #print num, den
+                val = num / den
+                # print val,serie[j],serie[i]
+                if val > 0:
+                    cij = 1.0
+                elif val < 0:
+                    cij = -1.0
+                # print cij
+                sumwijcij += wij*cij
+                sumwij += wij
+                # print i,j,series[0][j],serie[j],series[0][i],serie[i],val,wij*cij,wij
+                # sys.exit(-1)
+        PI = sumwijcij/sumwij
+        #print PI
+        return PI
+
+    def calculate_r2 (self, series1, series2):
+        r_value,p = scipy.stats.pearsonr(series1,series2)
+
+        return r_value**2, r_value
+
+    def calculate_tau(self, series1, series2):
+        tau = scipy.stats.kendalltau(series1, series2)
+        return tau[0]
+
+    def calculate_mue(self, series1, series2 ):
+
+        sumdev = 0.0
+        for x in range(0,len(series1)):
+            sumdev += abs( series1[x] - series2[x] )
+        sumdev /= len(series1)
+
+        #print sumdev
+        return sumdev
+
+    def perturb(self, data):
+        r""" generates new set of data based on gauss distribution
+        Parameters
+        ----------
+        data : nd.array(shape(datapoints,2))
+            first column holding actual data, second error on data
+
+        """
+        repeat = np.zeros(np.shape(data))
+
+        count = 0
+        for d in data:
+            val = d[0]
+            err = d[1]
+            if err != 0.0:
+                val2 = np.random.normal(val, err)
+            else:
+                val2 = val
+            repeat[count][0] = val2
+            repeat[count][1] = err
+            count = count + 1
+
+        return repeat
 
 
