@@ -1,6 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+#!/usr/bin/env python
+
+# This file is part of freenrgworkflows.
+#
+# Copyright 2016,2017 Julien Michel Lab, University of Edinburgh (UK)
+#
+# freenrgworkflows is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 __author__ = "Antonia Mey"
 __email__ = "antonia.mey@ed.ac.uk"
 
@@ -35,9 +54,9 @@ class ExperimentalData(object):
 
         if reference is not None:
             self._referenceCompound = reference
-        #for k in self._ic50s.keys():
-        #    r = float(self._ic50s.get(k))/float(self._ic50s.get(self._referenceCompound))
-        #    DDG = self.kT*np.log(r)
+        for k in self._ic50s.keys():
+            r = float(self._ic50s.get(k))/float(self._ic50s.get(self._referenceCompound))
+            DDG = self.kT*np.log(r)
         print (self._ic50s)
         #for i in self._ic50s:
 
