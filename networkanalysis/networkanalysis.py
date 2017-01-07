@@ -21,6 +21,7 @@ class PerturbationGraph(object):
 
     def populate_pert_graph(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight',float),('error',float))):
         r"""
+        Reads data from a correctly formatted csv file into a networkx digraph
         Parameters
         ----------
         filename : String
@@ -40,18 +41,33 @@ class PerturbationGraph(object):
         """
         if self._graph == None:
             graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),nodetype=nodetype, data=data)
-            self._graph = self.symmetrize_graph(graph)
+            self._graph = self._symmetrize_graph(graph)
         else:
             print ('Use the method add_data_to_graph, to add further data to an existing graph')
             exit(-1)
 
     def add_data_to_graph(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight', float),('error',float))):
         r"""
+        Adds data to an existing graph from a csv file in the right networkx format
         Parameters
         ----------
+        filename : String
+            filename of the forward and backward perturbation generated from simulation output
+            Filestructure should be:
+            node1,node2,DG,eDG,other_attributes
+        delimiter : String
+            delimiter for network file 
+            Default = ','
+        comments : String
+            Symbol used for comments in network file
+            Default = '#'
+        nodetype : String
+            All nodes are usually identified by the compound name
+        data : list
+            Default, weight and error on Free energies of node
         """
         newGraph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),nodetype=nodetype, data=data)
-        newGraph = self.symmetrize_graph(newGraph)
+        newGraph = self._symmetrize_graph(newGraph)
         if self._graph!=None:
             for u,v,w in newGraph.edges(data=True):
                 if self._graph.has_edge(u,v):
@@ -65,8 +81,8 @@ class PerturbationGraph(object):
         else:
             self._graph = newGraph
 
-    def symmetrize_graph(self, graph):
-        r"""
+    def _symmetrize_graph(self, graph):
+        r"""symmetrises the graph and computes backward and forward averages where  given. 
         Parameters
         ----------
         graph : networkx graph
@@ -137,6 +153,12 @@ class PerturbationGraph(object):
             self._pathAverages.append(a)
 
     def compute_weighted_avg_paths(self, target_node):
+        r""" computes all possible paths to a target node and returns a weighted average based on the errors along the edges of the path
+        Parameters
+        ----------
+        target_node : string
+            string name of the target node as defined in the networkx graph
+        """
         #Get all relative free energies with respect to node x
         a = {target_node:0.0}
         a['error']=0.0
@@ -144,10 +166,7 @@ class PerturbationGraph(object):
         for n in self._graph.nodes():
             if n == target_node:
                 continue
-            #print "=============================="
-            #print "Path: "+str(n)+"~"+str(target_node)
             paths = list(nx.shortest_simple_paths(self._graph,target_node , n))
-            #print "There are "+str(len(paths))+" simple paths."
             err_list = []
             sum_list = []
             for p in paths:
@@ -159,14 +178,9 @@ class PerturbationGraph(object):
                 sum_list.append(summing)
                 error = np.sqrt(error)
                 err_list.append(error)
-                #print 'path sum is: ' +str(summing)
-                #print 'path error is: '+str(error)
             err_list = np.array(err_list)
             sum_weights = np.sum(1.0/err_list)
-            #print 'sum weights: '+str(sum_weights)
-            #print 1.0/err_list
             path_weights = (1.0/err_list)/sum_weights
-            #print path_weights
             avg_sum = 0.0
             avg_err = 0.0
             for i in range(len(sum_list)):
@@ -177,10 +191,6 @@ class PerturbationGraph(object):
             a = {str(n):avg_sum}
             a['error']=avg_err
             self._weightedPathAverages.append(a)
-            #print "path average is: "+str(np.mean(sum_list))
-            #print "path weighted average is: "+str(avg_sum)
-            #print "sum err is: " +str(avg_err)
-            #print "================"
 
 
     def get_cycles(self, max_length=4):
