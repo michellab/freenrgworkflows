@@ -38,8 +38,32 @@ class PerturbationGraph(object):
         data : list
             Default, weight and error on Free energies of node
         """
-        self._graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),nodetype=nodetype, data=data)
+        if self._graph == None:
+            graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),nodetype=nodetype, data=data)
+            self._graph = self.symmetrize_graph(graph)
+        else:
+            print ('Use the method add_data_to_graph, to add further data to an existing graph')
+            exit(-1)
 
+    def add_data_to_graph(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight', float),('error',float))):
+        r"""
+        Parameters
+        ----------
+        """
+        newGraph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),nodetype=nodetype, data=data)
+        newGraph = self.symmetrize_graph(newGraph)
+        if self._graph!=None:
+            for u,v,w in newGraph.edges(data=True):
+                if self._graph.has_edge(u,v):
+                    z = self._graph.get_edge_data(u,v)
+                    mean_edge = np.mean([z['weight'], w['weight']])
+                    error = 0.5*np.sqrt(z['error']**2+w['error']**2)
+                    self._graph.remove_edge(u,v)
+                    self._graph.add_edge(u,v,weight=mean_edge,error=error)
+                else:
+                    self._graph.add_edge(u, v, w)
+        else:
+            self._graph = newGraph
 
     def symmetrize_graph(self, graph):
         r"""
@@ -53,12 +77,21 @@ class PerturbationGraph(object):
         graph : networkx graph
             returns directed graph where, if not both a forward and backward edge are present a symmetrized reverse edge is included
         """
-        for u,v,w in graph.edges(data=True):
-            if not graph.has_edge(v,u):
+        symmetrizedGraph = nx.DiGraph()
+        for u,v,w_forward in graph.edges(data=True):
+            if graph.has_edge(v,u):
+                w_backward = graph.get_edge_data(v,u)
+                avg_weight_forw = np.mean([w_forward['weight'], -w_backward['weight']])
+                avg_weight_back = -avg_weight_forw
+                error = np.std([w_forward['weight'], -w_backward['weight']])
+                symmetrizedGraph.add_edge(u,v,weight=avg_weight_forw, error = error)
+                symmetrizedGraph.add_edge(v,u,weight=avg_weight_back, error = error)
+        for u,v,w in symmetrizedGraph.edges(data=True):
+            if not symmetrizedGraph.has_edge(v,u):
                 assymetric_w = -w['weight']
                 assymetric_e = -w['error']
-                graph.add_edge(v,u,weight=assymetric_w, error = assymetric_e)
-        return graph
+                symmetrizedGraph.add_edge(v,u,weight=assymetric_w, error = assymetric_e)
+        return symmetrizedGraph
 
     def save_average_paths(self, filename, pathAverages):
         f = open(filename, 'w')
