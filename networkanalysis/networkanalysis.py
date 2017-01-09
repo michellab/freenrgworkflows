@@ -249,6 +249,13 @@ class PerturbationGraph(object):
     def weightedPathAverages(self):
         return self._weightedPathAverages
 
+    @property
+    def freeEnergyInKcal(self):
+        if self.weighted_paths:
+            return self._weightedPathAverages
+        else:
+            return self._pathAverages
+
 
 
 

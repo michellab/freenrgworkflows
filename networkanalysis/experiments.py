@@ -32,45 +32,49 @@ import copy
 
 class ExperimentalData(object):
     """docstring for ExperimentalData"""
-    def __init__(self):
-        self._DG_in_kcal = {}
-        self._DG_in_kJ = {}
-        self._ic50s = []
+    def __init__(self, temperature = 300.0):
+        self._DG_in_kcal = None
+        self._DG_in_kJ = None
+        self._ic50s = None
         self._referenceCompound = None
-        self._kT = 0.0019872041*300
+        self._kTkcal = 0.0019872041*temperature
+        self._kTkJ = 0.0083144621*temperature
+        self._keys = None
 
-    def from_IC50s(self, filename, reference = None):
+    def compute_DDG_from_IC50s(self, filename, reference = None, smiles_string=False):
         r"""
         filename : string
             file containing ic50 data, format - compound name, ic50 value, error
         """
+        self._keys = []
+        self._ic50s = []
+        self._DG_in_kcal = {}
+        self._DG_in_kJ = {}
         f = open(filename, 'r')
         for line in f.readlines():
             curr_ic50 = {}
             fields = line.split(',')
             curr_ic50[fields[0]] = float(fields[1].strip())
-            self._ic50s.append(curr_ic50)
-            #TODO: check next entry, is this an error? Something else? 
+            if smiles_string and len(fields) >2:
+                curr_ic50['smiles'] = fields[2].strip()
+            #note down the keys
+            self._keys.append(fields[0])
+            self._ic50s.append(curr_ic50) #append to list of ic50 compounds. 
+        f.close()
 
+        reference_index = 0
+        self._referenceCompound = self._keys[reference_index]
         if reference is not None:
             self._referenceCompound = reference
-        for k in self._ic50s.keys():
-            r = float(self._ic50s.get(k))/float(self._ic50s.get(self._referenceCompound))
-            DDG = self.kT*np.log(r)
-        print (self._ic50s)
+            reference_index = self._keys.index(self._referenceCompound)
+        for k in range(len(self._keys)):
+            key = self._keys[k]
+            ic50 = self._ic50s[k][key]
+            r = float(ic50/float(self._ic50s[reference_index][self._referenceCompound]))
+            self._DG_in_kJ[key] = self._kTkJ*np.log(r)
+            self._DG_in_kcal[key] = self._kTkcal*np.log(r)
+
         #for i in self._ic50s:
-
-
-
-    def from_free_energies(self, filename, kcal=True):
-        r"""
-        filename : string
-            file containing ic50 data, format - compound name, free energy_relative_to , error
-        """
-        #if kcal:
-            #self._DG_in_kcal = np.loadtxt(filename)
-        #else:
-            #self._DG_in_kJ = np.loadtxt(filename)
 
     @property
     def ic50s(self):
