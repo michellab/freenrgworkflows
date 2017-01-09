@@ -31,6 +31,6 @@ setup(
     maintainer_email='antonia.mey@ed.ac.uk',
     license='LGPLv3+',
     packages=['networkanalysis'],
-    scripts=[]
+    scripts=['bin/run_networkanalysis.py']
 )
 
