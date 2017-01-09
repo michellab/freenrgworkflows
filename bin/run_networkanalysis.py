@@ -69,12 +69,18 @@ if '__main__' == __name__:
              help='File to write final free energies to based on network analysis',
              metavar='FILE'
     )
-    # parser.add_argument(
-    #         '-e',
-    #         '--experiments',
-    #         help='File containing experimental data results',
-    #         metavar='FILE'
-    # )
+    parser.add_argument(
+             '-e',
+             '--experiments',
+             help='File containing experimental data results',
+             default = None,
+             metavar='FILE'
+    )
+    parser.add_argument(
+            "--stats",
+            help="Saves network data output",
+            action='store_true'
+    )
     # parser.add_argument(
     #         "--maxiter",
     #         help="limit the number of fixed point iterations",
@@ -123,7 +129,20 @@ if '__main__' == __name__:
         pG.save_average_paths(args.network_output, comp_DDG)
 
     #Read experimental data
+    if args.experiments != None:
+        ex = ExperimentalData()
+        ex.compute_DDG_from_IC50s(args.experiments,reference=args.target_compound)
+        exp_DDG = ex.freeEnergiesInKcal
+        if args.stats:
+            stats = freeEnergyStats()
+            stats.generate_statistics(comp_DDG,exp_DDG,repeats=1000)
 
+            print ("\n\n########################## Statistics ######################################")
+            print (" R and error = %f ± %f" %(stats.R, stats.R_error))
+            print (" R2 and error = %f ± %f" %(stats.R2, stats.R2_error))
+            print (" tau and error = %f ± %f" %(stats.tau, stats.tau_error))
+            print (" MUE and error = %f ± %f" %(stats.mue, stats.mue_error))
+            print ("#############################################################################\n\n")
 
 
     ############################################################################
@@ -131,7 +150,8 @@ if '__main__' == __name__:
     #   say good bye
     #
     ############################################################################
-    print ("#\n###################That's it, now it is time to put the kettle on ##############################\n#")
-    print ("#                  Thank you for using the network analysis package!\n#")
+    print ("#\n#################################################################################################\n#")
+    print ("#                 That's it, now it's time to put the kettle on ")
+    print ("#                Thank you for using the network analysis package!")
     print ("#\n################################################################################################\n\n")
 
