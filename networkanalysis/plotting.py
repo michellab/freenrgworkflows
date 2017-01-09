@@ -96,7 +96,7 @@ class FreeEnergyPlotter(object):
         ind = np.arange(0,N,2)  # the x locations for the groups
         width = 0.25*2       # the width of the bars
         fig, ax = plt.subplots(figsize=(7,7))
-        print r1_weight
+        print (r1_weight)
         data1 = r2_weight[:,0]
         data2 = r3_weight[:,0]
         rects1 = ax.bar(ind, r1_weight, width, color=sns.xkcd_rgb["pale red"])
