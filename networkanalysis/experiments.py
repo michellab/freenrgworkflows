@@ -48,8 +48,8 @@ class ExperimentalData(object):
         """
         self._keys = []
         self._ic50s = []
-        self._DG_in_kcal = {}
-        self._DG_in_kJ = {}
+        self._DG_in_kcal = []
+        self._DG_in_kJ = []
         f = open(filename, 'r')
         for line in f.readlines():
             curr_ic50 = {}
@@ -71,10 +71,14 @@ class ExperimentalData(object):
             key = self._keys[k]
             ic50 = self._ic50s[k][key]
             r = float(ic50/float(self._ic50s[reference_index][self._referenceCompound]))
-            self._DG_in_kJ[key] = self._kTkJ*np.log(r)
-            self._DG_in_kcal[key] = self._kTkcal*np.log(r)
-
-        #for i in self._ic50s:
+            a_kcal = {}
+            a_kcal[key] = self._kTkcal*np.log(r)
+            a_kcal['error'] = 0.6
+            self._DG_in_kcal.append(a_kcal)
+            a_kJ = {}
+            a_kJ[key] = self._kTkJ*np.log(r)
+            a_kJ['error'] = 2.5
+            self._DG_in_kJ.append(a_kJ)
 
     @property
     def ic50s(self):
@@ -87,4 +91,8 @@ class ExperimentalData(object):
     @property
     def freeEnergiesInKJmol(self):
         return self._DG_in_kJ
+
+    @property
+    def compoundList(self):
+        return self._keys
 

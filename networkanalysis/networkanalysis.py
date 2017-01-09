@@ -32,10 +32,11 @@ import copy
 
 class PerturbationGraph(object):
     """Populates a directed free energy perturbation graph"""
-    def __init__(self, ):
+    def __init__(self, weighted_paths = True):
         self._graph = None
         self._pathAverages = []
         self._weightedPathAverages = []
+        self.weighted_paths = weighted_paths
 
 
     def populate_pert_graph(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight',float),('error',float))):
@@ -255,6 +256,10 @@ class PerturbationGraph(object):
             return self._weightedPathAverages
         else:
             return self._pathAverages
+
+    @property
+    def compoundList(self):
+        return self._graph.nodes()
 
 
 

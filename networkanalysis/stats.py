@@ -11,10 +11,69 @@ import copy
 
 class freeEnergyStats(object):
     """docstring for freeEnergyStats"""
-    def __init__(self, arg):
-        super(freeEnergyStats, self).__init__()
-        self.arg = arg
-        
+    def __init__(self):
+        self._PI = None
+        self._R = None
+        self._R2 = None
+        self._tau = None
+        self._mue = None
+        self._compound_list = None
+
+    def generate_statistics(self, comp_data, exp_data, compound_list = None, repeats = 1000):
+        r"""
+        Parameters
+        ----------
+
+        comp_data : list of dictionaries
+            list of dictionaries of computed free energies and their errors
+        exp_data : list of dictionaries
+            list of dictionaries of experimental free energies and their errors
+        comound_list : list of strings
+            list should contain dictionary keys of compounds to be compared statistically
+        repeats : integer
+            number of times new samples are drawn from the gaussian distribution of the computational data
+        """
+        if compound_list == None:
+            cl_exp = set().union(*(d.keys() for d in exp_data))
+            cl_comp= set().union(*(d.keys() for d in comp_data))
+            compound_list = list(set(cl_exp).intersection(cl_comp))
+            if 'error' in compound_list:
+                index = compound_list.index('error')
+                compound_list.pop(index)
+            self._compound_list = compound_list
+        else:
+            self._compound_list = compound_list
+
+        data_comp = []
+        data_exp = []
+        err_comp = []
+        self._R = []
+        self._R2 = []
+        self._tau = []
+        self._mue = []
+        for k in self._compound_list:
+            comp = (item for item in comp_data if item.has_key(k)).next()
+            exp = (item for item in exp_data if item.has_key(k)).next()
+            val = comp[k]
+            err = comp['error']
+            data_comp.append([val,err])
+            val = exp[k]
+            data_exp.append(val)
+        for i in range(repeats):
+            new_data = []
+            for i in range(len(data_comp)):
+                val = data_comp[i][0]
+                err = data_comp[i][1]
+                if err != 0.0:
+                    val2 = np.random.normal(val, err)
+                new_data.append(val2)
+            R2, R = self._calculate_r2(new_data, data_exp)
+            tau = self._calculate_tau(new_data, data_exp)
+            mue = self._calculate_mue(new_data, data_exp)
+            self._R.append(R)
+            self._R2.append(R2)
+            self._tau.append(tau)
+            self._mue.append(mue)
 
     def calculate_pi(self, series1, series2):
         sumwijcij = 0.0
@@ -49,16 +108,16 @@ class freeEnergyStats(object):
         #print PI
         return PI
 
-    def calculate_r2 (self, series1, series2):
+    def _calculate_r2 (self, series1, series2):
         r_value,p = scipy.stats.pearsonr(series1,series2)
 
         return r_value**2, r_value
 
-    def calculate_tau(self, series1, series2):
+    def _calculate_tau(self, series1, series2):
         tau = scipy.stats.kendalltau(series1, series2)
         return tau[0]
 
-    def calculate_mue(self, series1, series2 ):
+    def _calculate_mue(self, series1, series2 ):
 
         sumdev = 0.0
         for x in range(0,len(series1)):
@@ -68,26 +127,36 @@ class freeEnergyStats(object):
         #print sumdev
         return sumdev
 
-    def perturb(self, data):
-        r""" generates new set of data based on gauss distribution
-        Parameters
-        ----------
-        data : nd.array(shape(datapoints,2))
-            first column holding actual data, second error on data
+    @property
+    def R(self):
+        return np.mean(self._R)
 
-        """
-        repeat = np.zeros(np.shape(data))
+    @property
+    def R_error(self):
+        return np.std(self._R)/np.sqrt(len(self._R))
 
-        count = 0
-        for d in data:
-            val = d[0]
-            err = d[1]
-            if err != 0.0:
-                val2 = np.random.normal(val, err)
-            else:
-                val2 = val
-            repeat[count][0] = val2
-            repeat[count][1] = err
-            count = count + 1
+    @property
+    def R2(self):
+        return np.mean(self._R2)
 
-        return repeat
+    @property
+    def R2_error(self):
+        return np.std(self._R2)/np.sqrt(len(self._R2))
+
+    @property
+    def tau(self):
+        return np.mean(self._tau)
+
+    @property
+    def tau_error(self):
+        return np.std(self._tau)/np.sqrt(len(self._tau))
+
+    @property
+    def mue(self):
+        return np.mean(self._mue)
+
+    @property
+    def mue_error(self):
+        return np.std(self._mue)/np.sqrt(len(self._mue))
+
+
