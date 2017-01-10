@@ -30,7 +30,6 @@ setup(
             'Development Status :: 3 - Alpha',
             'Environment :: Console',
             'Intended Audience :: Science/Research',
-            'License :: OSI Approved :: LGPL',
             'Natural Language :: English',
             'Operating System :: MacOS :: MacOS X',
             'Operating System :: POSIX :: Linux',
