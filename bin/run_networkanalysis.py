@@ -78,7 +78,7 @@ if '__main__' == __name__:
     )
     parser.add_argument(
             "--stats",
-            help="Saves network data output",
+            help="Print correclation statistics between computated and experimental data",
             action='store_true'
     )
     # parser.add_argument(
@@ -112,8 +112,13 @@ if '__main__' == __name__:
     #
     ############################################################################
     print ("\n\n##########################NETWORKANALYSIS WITH NETWORKX ######################################")
-    print ("#\n### PARAMETERS\n#")
-    print (args.files)
+    print ("\n\n########################## Parameters ######################################")
+    print ("filelist: \t\t\t\t%s" %args.files)
+    print ("target compound: \t\t\t%s" %args.target_compound)
+    print ("Network computed free energies file: \t%s" %args.network_output)
+    print ("IC50s datafile: \t\t\t%s" %args.experiments)
+    print ("Correlation statistics:\t\t\t%s" %args.stats)
+    print ("#############################################################################\n\n")
 
 
     #Do the network analysis
@@ -150,7 +155,7 @@ if '__main__' == __name__:
     #   say good bye
     #
     ############################################################################
-    print ("#\n#################################################################################################\n#")
+    print ("\n#################################################################################################\n#")
     print ("#                 That's it, now it's time to put the kettle on ")
     print ("#                Thank you for using the network analysis package!")
     print ("#\n################################################################################################\n\n")
