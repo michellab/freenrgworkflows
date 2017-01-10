@@ -1,1 +1,9 @@
 *.pyc
+.DS_Store
+.ipynb_checkpoints/
+build/
+dist/
+freenrgworkflows.egg-info/
+test/comp.dat
+test/ic50_exp.dat
+test/test_graph1.csv
