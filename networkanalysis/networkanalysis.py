@@ -149,6 +149,7 @@ class PerturbationGraph(object):
             node to which all possible paths are computed
         """
         #Get all relative free energies with respect to node x
+        self._pathAveages = []
         for n in self._graph.nodes():
             paths = nx.shortest_simple_paths(self._graph,target_node , n)
             err_list = []
@@ -180,6 +181,7 @@ class PerturbationGraph(object):
             string name of the target node as defined in the networkx graph
         """
         #Get all relative free energies with respect to node x
+        self._weightedPathAverages = []
         a = {target_node:0.0}
         a['error']=0.0
         self._weightedPathAverages.append(a)
