@@ -131,17 +131,24 @@ class PerturbationGraph(object):
                 symmetrizedGraph.add_edge(v,u,weight=assymetric_w, error = assymetric_e)
         return symmetrizedGraph
 
-    def save_free_energies(self, filename, pathAverages):
-        f = open(filename, 'w')
-        for d in pathAverages:
-            for k,v in d.iteritems():
-                if k == 'error':
-                    error = v
+    def write_free_energies(self, pathAverages, filename = None, fmt = None):
+        if filename != None:
+            f = open(filename, 'w')
+            for d in pathAverages:
+                for k,v in d.iteritems():
+                    if k == 'error':
+                        error = v
+                    else:
+                        r_energy_k = k
+                        r_energy_v = v
+                if fmt == None:
+                    f.write('%s, %f, %f\n' %(r_energy_k,r_energy_v,error))
                 else:
-                    r_energy_k = k
-                    r_energy_v = v
-            f.write(str(r_energy_k)+', '+str(r_energy_v)+', '+str(error)+'\n')
-        f.close()
+                    f.write(fmt %(r_energy_k,r_energy_v,error))
+                #f.write(str(r_energy_k)+', '+str(r_energy_v)+', '+str(error)+'\n')
+            f.close()
+        else:
+            print 'printing energies to screen'
 
     def compute_average_paths(self, target_node):
         r"""
