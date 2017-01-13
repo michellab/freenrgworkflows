@@ -37,6 +37,7 @@ class PerturbationGraph(object):
         self._pathAverages = []
         self._weightedPathAverages = []
         self.weighted_paths = weighted_paths
+        self._compoundList = []
 
 
     def populate_pert_graph(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight',float),('error',float))):
@@ -62,6 +63,7 @@ class PerturbationGraph(object):
         if self._graph == None:
             graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),nodetype=nodetype, data=data)
             self._graph = self._symmetrize_graph(graph)
+            self._compoundList = np.sort(self._graph.nodes())
         else:
             print ('Use the method add_data_to_graph, to add further data to an existing graph')
             exit(-1)
@@ -129,7 +131,7 @@ class PerturbationGraph(object):
                 symmetrizedGraph.add_edge(v,u,weight=assymetric_w, error = assymetric_e)
         return symmetrizedGraph
 
-    def save_average_paths(self, filename, pathAverages):
+    def save_free_energies(self, filename, pathAverages):
         f = open(filename, 'w')
         for d in pathAverages:
             for k,v in d.iteritems():
@@ -150,7 +152,7 @@ class PerturbationGraph(object):
         """
         #Get all relative free energies with respect to node x
         self._pathAveages = []
-        for n in self._graph.nodes():
+        for n in self._compoundList:
             paths = nx.shortest_simple_paths(self._graph,target_node , n)
             err_list = []
             sum_list = []
@@ -185,7 +187,7 @@ class PerturbationGraph(object):
         a = {target_node:0.0}
         a['error']=0.0
         self._weightedPathAverages.append(a)
-        for n in self._graph.nodes():
+        for n in self._compoundList:
             if n == target_node:
                 continue
             paths = list(nx.shortest_simple_paths(self._graph,target_node , n))
@@ -261,7 +263,7 @@ class PerturbationGraph(object):
 
     @property
     def compoundList(self):
-        return self._graph.nodes()
+        return self._compoundList
 
 
 

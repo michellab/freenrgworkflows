@@ -32,9 +32,8 @@ sns.set_context("notebook", font_scale = 2)
 
 class FreeEnergyPlotter(object):
     """docstring for FreeEnergyPlotter"""
-    def __init__(self, arg):
-        super(FreeEnergyPlotter, self).__init__()
-        self.arg = arg
+    def __init__(self):
+        nothing = []
         
 
     def plot_bar_plot(self, set_ddg, graph_est, keys):
