@@ -20,7 +20,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = "Antonia Mey"
+__author__ = "Antonia Mey", "Julien Michel"
 __email__ = "antonia.mey@ed.ac.uk"
 
 
@@ -28,15 +28,18 @@ import numpy as np
 import networkx as nx
 import scipy.stats
 import copy
+import sys
 
 
 class PerturbationGraph(object):
     """Populates a directed free energy perturbation graph"""
-    def __init__(self, weighted_paths = True):
+    def __init__(self):
         self._graph = None
         self._pathAverages = []
         self._weightedPathAverages = []
-        self.weighted_paths = weighted_paths
+        self._weighted_paths = None
+        self._compoundList = []
+        self._free_energies = []
 
 
     def populate_pert_graph(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight',float),('error',float))):
@@ -62,6 +65,7 @@ class PerturbationGraph(object):
         if self._graph == None:
             graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),nodetype=nodetype, data=data)
             self._graph = self._symmetrize_graph(graph)
+            self._compoundList = np.sort(self._graph.nodes())
         else:
             print ('Use the method add_data_to_graph, to add further data to an existing graph')
             exit(-1)
@@ -129,17 +133,124 @@ class PerturbationGraph(object):
                 symmetrizedGraph.add_edge(v,u,weight=assymetric_w, error = assymetric_e)
         return symmetrizedGraph
 
-    def save_average_paths(self, filename, pathAverages):
-        f = open(filename, 'w')
-        for d in pathAverages:
+    def format_free_energies(self, merge_BM = False,  kT=0.594, intermed_ID = None, compound_order = None, weighted = True):
+        r"""
+         Parameters
+        ----------
+        fmt : string
+            format string for the free energies, e.g. '%s, %f, %f\n'
+            Default = None
+        merge_BM : boolean
+            true or false for binding modes using identifieds xxx_BMyyy, where xxx is the molecule name and yyy is the number of the binding mode
+            Default = False
+        kT : float
+            simulation temperature times boltzman constant in [kcal/mol]
+            Default = 0.594
+        intermed_ID : string
+            string identifier of intermediate simulated compounds, e.g 'INT'
+            Default = None
+        compound_order : list
+            list of compounds
+        weighted : boolean
+            use weithed or none error weighted paths
+        """
+        if self._free_energies:
+            self._free_energies = []
+        mols = {}
+        if weighted:
+            if not self._weightedPathAverages:
+                print('compute weithed path averages for network first in order to format free energies')
+                sys.exit(1)
+            else:
+                freeEnergies = self._weightedPathAverages
+        else:
+            if not self._pathAverages:
+                print('compute path averages for network first in order to format free energies')
+                sys.exit(1)
+            else:
+                freeEnergies = self._pathAveages
+
+        for data in freeEnergies:
+            keys = data.keys()
+            if keys[0]!='error':
+                mol = keys[0]
+            else:
+                mol = keys[1]
+            nrg = data[mol]
+            err = data['error']
+            if merge_BM:
+                elems = mol.split("_BM")
+                moln = elems[0]
+            else:
+                moln = mol
+            try:
+                mols[moln]
+            except KeyError:
+                mols[moln] = []
+            mols[moln].append([nrg, err])
+        ids = mols.keys()
+        ids.sort()
+        if compound_order != None:
+            if set(compound_order).issubset(ids):
+                ids = compound_order
+            else:
+                print ("The list of compounds you provided does not match the ones stored in the pertubation network")
+                print ("Compounds are:")
+                print (ids)
+                sys.exit(1)
+        for mol in ids:
+            if intermed_ID != None:
+                if mol.startswith(intermed_ID):
+                    continue
+            nrgtot = 0.0
+            errtot = 0.0
+            for nrg, err in mols[mol]:
+                nrgtot += np.exp(-nrg/kT)
+                errtot += err**2
+            nrgtot = -kT*np.log(nrgtot)
+            errtot = np.sqrt(errtot)
+            a = {}
+            a[mol] = nrgtot
+            a['error'] = errtot
+            self._free_energies.append(a)
+
+
+    def write_free_energies(self, freeEnergies, filename = None, fmt = None):
+        r"""Either write free energies to a file or std out
+        Parameters
+        ----------
+        freeEnergies : list of dictionaries
+            contains dictionaries with free energies and their errors
+        filename : string
+            file to which free energies should be written
+            default = None
+        fmt : string
+            format string for the free energies, e.g. '%s, %f, %f\n'
+            Default = None
+        """
+        if filename != None:
+            f = open(filename, 'w')
+        else:
+            print ('#FREE ENERGIES ARE:')
+        for d in freeEnergies:
             for k,v in d.iteritems():
                 if k == 'error':
                     error = v
                 else:
                     r_energy_k = k
                     r_energy_v = v
-            f.write(str(r_energy_k)+', '+str(r_energy_v)+', '+str(error)+'\n')
-        f.close()
+            if filename != None:
+                if fmt == None:
+                    f.write('%s, %f, %f\n' %(r_energy_k,r_energy_v,error))
+                else:
+                    f.write(fmt %(r_energy_k,r_energy_v,error))
+            else:
+                if fmt == None:
+                    print('{:10s} {:5.3f} ± {:5.3f}'.format(r_energy_k,r_energy_v,error))
+                else:
+                    print (fmt %(r_energy_k,r_energy_v,error))
+        if filename != None:
+            f.close()
 
     def compute_average_paths(self, target_node):
         r"""
@@ -149,7 +260,9 @@ class PerturbationGraph(object):
             node to which all possible paths are computed
         """
         #Get all relative free energies with respect to node x
-        for n in self._graph.nodes():
+        self._weighted_paths = False 
+        self._pathAveages = []
+        for n in self._compoundList:
             paths = nx.shortest_simple_paths(self._graph,target_node , n)
             err_list = []
             sum_list = []
@@ -180,10 +293,12 @@ class PerturbationGraph(object):
             string name of the target node as defined in the networkx graph
         """
         #Get all relative free energies with respect to node x
+        self._weighted_paths = True 
+        self._weightedPathAverages = []
         a = {target_node:0.0}
         a['error']=0.0
         self._weightedPathAverages.append(a)
-        for n in self._graph.nodes():
+        for n in self._compoundList:
             if n == target_node:
                 continue
             paths = list(nx.shortest_simple_paths(self._graph,target_node , n))
@@ -252,14 +367,17 @@ class PerturbationGraph(object):
 
     @property
     def freeEnergyInKcal(self):
-        if self.weighted_paths:
-            return self._weightedPathAverages
+        if self._free_energies:
+            return self._free_energies
         else:
-            return self._pathAverages
+            if self._weighted_paths:
+                return self._weightedPathAverages
+            else:
+                return self._pathAverages
 
     @property
     def compoundList(self):
-        return self._graph.nodes()
+        return self._compoundList
 
 
 
