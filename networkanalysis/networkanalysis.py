@@ -131,24 +131,41 @@ class PerturbationGraph(object):
                 symmetrizedGraph.add_edge(v,u,weight=assymetric_w, error = assymetric_e)
         return symmetrizedGraph
 
-    def write_free_energies(self, pathAverages, filename = None, fmt = None):
+    def write_free_energies(self, freeEnergies, filename = None, fmt = None):
+        r"""Either write free energies to a file or std out
+        Parameters
+        ----------
+        freeEnergies : list of dictionaries
+            contains dictionaries with free energies and their errors
+        filename : string
+            file to which free energies should be written
+        fmt : string
+            format string for the free energies, e.g. '%s, %f, %f\n'
+        """
         if filename != None:
             f = open(filename, 'w')
-            for d in pathAverages:
-                for k,v in d.iteritems():
-                    if k == 'error':
-                        error = v
-                    else:
-                        r_energy_k = k
-                        r_energy_v = v
+        else:
+            print ('#FREE ENERGIES ARE:')
+        for d in freeEnergies:
+            for k,v in d.iteritems():
+                if k == 'error':
+                    error = v
+                else:
+                    r_energy_k = k
+                    r_energy_v = v
+            if filename != None:
                 if fmt == None:
                     f.write('%s, %f, %f\n' %(r_energy_k,r_energy_v,error))
                 else:
                     f.write(fmt %(r_energy_k,r_energy_v,error))
-                #f.write(str(r_energy_k)+', '+str(r_energy_v)+', '+str(error)+'\n')
+            else:
+                if fmt == None:
+                    print('{:10s} {:2.3f}  {:2.3f}'.format(r_energy_k,r_energy_v,error))
+                else:
+                    print (fmt %(r_energy_k,r_energy_v,error))
+        if filename != None:
             f.close()
-        else:
-            print 'printing energies to screen'
+
 
     def compute_average_paths(self, target_node):
         r"""
