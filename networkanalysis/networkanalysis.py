@@ -131,7 +131,7 @@ class PerturbationGraph(object):
                 symmetrizedGraph.add_edge(v,u,weight=assymetric_w, error = assymetric_e)
         return symmetrizedGraph
 
-    def write_free_energies(self, freeEnergies, filename = None, fmt = None):
+    def write_free_energies(self, freeEnergies, filename = None, fmt = None, merge_BM = False, kT=0.594, intermed_ID = None):
         r"""Either write free energies to a file or std out
         Parameters
         ----------
@@ -142,6 +142,12 @@ class PerturbationGraph(object):
         fmt : string
             format string for the free energies, e.g. '%s, %f, %f\n'
         """
+        if merge_BM:
+            self._write_free_energies_bm(freeEnergies, filename, fmt, intermed_ID, kT)
+        else:
+            self._write_free_energies(freeEnergies, filename, fmt, intermed_ID)
+
+    def _write_free_energies(self, freeEnergies, filename, fmt, intermed_ID):
         if filename != None:
             f = open(filename, 'w')
         else:
@@ -153,6 +159,9 @@ class PerturbationGraph(object):
                 else:
                     r_energy_k = k
                     r_energy_v = v
+            if intermed_ID != None:
+                if r_energy_k.startswith(intermed_ID):
+                    continue
             if filename != None:
                 if fmt == None:
                     f.write('%s, %f, %f\n' %(r_energy_k,r_energy_v,error))
@@ -160,9 +169,60 @@ class PerturbationGraph(object):
                     f.write(fmt %(r_energy_k,r_energy_v,error))
             else:
                 if fmt == None:
-                    print('{:10s} {:2.3f}  {:2.3f}'.format(r_energy_k,r_energy_v,error))
+                    print('{:10s} {:5.3f} ± {:5.3f}'.format(r_energy_k,r_energy_v,error))
                 else:
                     print (fmt %(r_energy_k,r_energy_v,error))
+        if filename != None:
+            f.close()
+
+    def _write_free_energies_bm(self, freeEnergies, filename, fmt, intermed_ID, kT):
+        mols = {}
+        for data in freeEnergies:
+            keys = data.keys()
+            if keys[0]!='error':
+                mol = keys[0]
+            else:
+                mol = keys[1]
+            nrg = data[mol]
+            err = data['error']
+            elems = mol.split("_BM")
+            moln = elems[0]
+            try:
+                mols[moln]
+            except KeyError:
+                mols[moln] = []
+            mols[moln].append([nrg, err])
+
+        #print (mols)
+
+        ids = mols.keys()
+        ids.sort()
+        if filename !=None:
+            f = open(filename, 'w')
+        else:
+            print ('#FREE ENERGIES ARE:')
+        for mol in ids:
+            if intermed_ID != None:
+                if mol.startswith(intermed_ID):
+                    continue
+            nrgtot = 0.0
+            errtot = 0.0
+            for nrg, err in mols[mol]:
+                nrgtot += np.exp(-nrg/kT)
+                errtot += err**2
+            nrgtot = -kT*np.log(nrgtot)
+            errtot = np.sqrt(errtot)
+            if filename != None:
+                if fmt == None:
+                    f.write('%s, %f, %f\n' %(mol,nrgtot,errtot))
+                else:
+                    f.write(fmt %(mol,nrgtot,errtot))
+            else:
+                if fmt == None:
+                    print('{:10s} {:5.3f} ± {:5.3f}'.format(mol,nrgtot,errtot))
+                    #print ("%s %5.2f +/- %5.2f" % (mol,nrgtot,errtot))
+                else: 
+                    print(fmt %(mol,nrgtot,errtot))
         if filename != None:
             f.close()
 
