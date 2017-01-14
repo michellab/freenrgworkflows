@@ -20,7 +20,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = "Antonia Mey"
+__author__ = "Antonia Mey", "Julien Michel"
 __email__ = "antonia.mey@ed.ac.uk"
 
 
@@ -139,8 +139,19 @@ class PerturbationGraph(object):
             contains dictionaries with free energies and their errors
         filename : string
             file to which free energies should be written
+            default = None
         fmt : string
             format string for the free energies, e.g. '%s, %f, %f\n'
+            Default = None
+        merge_BM : boolean
+            true or false for binding modes using identifieds xxx_BMyyy, where xxx is the molecule name and yyy is the number of the binding mode
+            Default = False
+        kT : float
+            simulation temperature times boltzman constant in [kcal/mol]
+            Default = 0.594
+        intermed_ID : string
+            string identifier of intermediate simulated compounds, e.g 'INT'
+            Default = None
         """
         if merge_BM:
             self._write_free_energies_bm(freeEnergies, filename, fmt, intermed_ID, kT)
