@@ -154,65 +154,65 @@ class PerturbationGraph(object):
         weighted : boolean
             use weithed or none error weighted paths
         """
-        if merge_BM:
-            if self._free_energies:
-                self._free_energies = []
-            mols = {}
-            if weighted:
-                if not self._weightedPathAverages:
-                    print('compute weithed path averages for network first in order to format free energies')
-                    sys.exit(1)
-                else:
-                    freeEnergies = self._weightedPathAverages
+        if self._free_energies:
+            self._free_energies = []
+        mols = {}
+        if weighted:
+            if not self._weightedPathAverages:
+                print('compute weithed path averages for network first in order to format free energies')
+                sys.exit(1)
             else:
-                if not self._pathAverages:
-                    print('compute path averages for network first in order to format free energies')
-                    sys.exit(1)
-                else:
-                    freeEnergies = self._pathAveages
+                freeEnergies = self._weightedPathAverages
+        else:
+            if not self._pathAverages:
+                print('compute path averages for network first in order to format free energies')
+                sys.exit(1)
+            else:
+                freeEnergies = self._pathAveages
 
-            for data in freeEnergies:
-                keys = data.keys()
-                if keys[0]!='error':
-                    mol = keys[0]
-                else:
-                    mol = keys[1]
-                nrg = data[mol]
-                err = data['error']
+        for data in freeEnergies:
+            keys = data.keys()
+            if keys[0]!='error':
+                mol = keys[0]
+            else:
+                mol = keys[1]
+            nrg = data[mol]
+            err = data['error']
+            if merge_BM:
                 elems = mol.split("_BM")
                 moln = elems[0]
-                try:
-                    mols[moln]
-                except KeyError:
-                    mols[moln] = []
-                mols[moln].append([nrg, err])
-            ids = mols.keys()
-            ids.sort()
-            if compound_order != None:
-                if set(compound_order).issubset(ids):
-                    ids = compound_order
-                else:
-                    print ("The list of compounds you provided does not match the ones stored in the pertubation network")
-                    print ("Compounds are:")
-                    print (ids)
-                    sys.exit(1)
-            for mol in ids:
-                if intermed_ID != None:
-                    if mol.startswith(intermed_ID):
-                        continue
-                nrgtot = 0.0
-                errtot = 0.0
-                for nrg, err in mols[mol]:
-                    nrgtot += np.exp(-nrg/kT)
-                    errtot += err**2
-                nrgtot = -kT*np.log(nrgtot)
-                errtot = np.sqrt(errtot)
-                a = {}
-                a[mol] = nrgtot
-                a['error'] = errtot
-                self._free_energies.append(a)
-        else:
-            print ("This has not been implemented yet. ")
+            else:
+                moln = mol
+            try:
+                mols[moln]
+            except KeyError:
+                mols[moln] = []
+            mols[moln].append([nrg, err])
+        ids = mols.keys()
+        ids.sort()
+        if compound_order != None:
+            if set(compound_order).issubset(ids):
+                ids = compound_order
+            else:
+                print ("The list of compounds you provided does not match the ones stored in the pertubation network")
+                print ("Compounds are:")
+                print (ids)
+                sys.exit(1)
+        for mol in ids:
+            if intermed_ID != None:
+                if mol.startswith(intermed_ID):
+                    continue
+            nrgtot = 0.0
+            errtot = 0.0
+            for nrg, err in mols[mol]:
+                nrgtot += np.exp(-nrg/kT)
+                errtot += err**2
+            nrgtot = -kT*np.log(nrgtot)
+            errtot = np.sqrt(errtot)
+            a = {}
+            a[mol] = nrgtot
+            a['error'] = errtot
+            self._free_energies.append(a)
 
 
     def write_free_energies(self, freeEnergies, filename = None, fmt = None):
