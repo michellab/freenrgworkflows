@@ -28,16 +28,18 @@ import numpy as np
 import networkx as nx
 import scipy.stats
 import copy
+import sys
 
 
 class PerturbationGraph(object):
     """Populates a directed free energy perturbation graph"""
-    def __init__(self, weighted_paths = True):
+    def __init__(self):
         self._graph = None
         self._pathAverages = []
         self._weightedPathAverages = []
-        self.weighted_paths = weighted_paths
+        self._weighted_paths = None
         self._compoundList = []
+        self._free_energies = []
 
 
     def populate_pert_graph(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight',float),('error',float))):
@@ -131,15 +133,10 @@ class PerturbationGraph(object):
                 symmetrizedGraph.add_edge(v,u,weight=assymetric_w, error = assymetric_e)
         return symmetrizedGraph
 
-    def write_free_energies(self, freeEnergies, filename = None, fmt = None, merge_BM = False, kT=0.594, intermed_ID = None):
-        r"""Either write free energies to a file or std out
-        Parameters
+    def format_free_energies(self, merge_BM = False,  kT=0.594, intermed_ID = None, compound_order = None, weighted = True):
+        r"""
+         Parameters
         ----------
-        freeEnergies : list of dictionaries
-            contains dictionaries with free energies and their errors
-        filename : string
-            file to which free energies should be written
-            default = None
         fmt : string
             format string for the free energies, e.g. '%s, %f, %f\n'
             Default = None
@@ -152,13 +149,85 @@ class PerturbationGraph(object):
         intermed_ID : string
             string identifier of intermediate simulated compounds, e.g 'INT'
             Default = None
+        compound_order : list
+            list of compounds
+        weighted : boolean
+            use weithed or none error weighted paths
         """
         if merge_BM:
-            self._write_free_energies_bm(freeEnergies, filename, fmt, intermed_ID, kT)
-        else:
-            self._write_free_energies(freeEnergies, filename, fmt, intermed_ID)
+            if self._free_energies:
+                self._free_energies = []
+            mols = {}
+            if weighted:
+                if not self._weightedPathAverages:
+                    print('compute weithed path averages for network first in order to format free energies')
+                    sys.exit(1)
+                else:
+                    freeEnergies = self._weightedPathAverages
+            else:
+                if not self._pathAverages:
+                    print('compute path averages for network first in order to format free energies')
+                    sys.exit(1)
+                else:
+                    freeEnergies = self._pathAveages
 
-    def _write_free_energies(self, freeEnergies, filename, fmt, intermed_ID):
+            for data in freeEnergies:
+                keys = data.keys()
+                if keys[0]!='error':
+                    mol = keys[0]
+                else:
+                    mol = keys[1]
+                nrg = data[mol]
+                err = data['error']
+                elems = mol.split("_BM")
+                moln = elems[0]
+                try:
+                    mols[moln]
+                except KeyError:
+                    mols[moln] = []
+                mols[moln].append([nrg, err])
+            ids = mols.keys()
+            ids.sort()
+            if compound_order != None:
+                if set(compound_order).issubset(ids):
+                    ids = compound_order
+                else:
+                    print ("The list of compounds you provided does not match the ones stored in the pertubation network")
+                    print ("Compounds are:")
+                    print (ids)
+                    sys.exit(1)
+            for mol in ids:
+                if intermed_ID != None:
+                    if mol.startswith(intermed_ID):
+                        continue
+                nrgtot = 0.0
+                errtot = 0.0
+                for nrg, err in mols[mol]:
+                    nrgtot += np.exp(-nrg/kT)
+                    errtot += err**2
+                nrgtot = -kT*np.log(nrgtot)
+                errtot = np.sqrt(errtot)
+                a = {}
+                a[mol] = nrgtot
+                a['error'] = errtot
+                self._free_energies.append(a)
+        else:
+            print ("This has not been implemented yet. ")
+
+
+    def write_free_energies(self, freeEnergies, filename = None, fmt = None):
+        r"""Either write free energies to a file or std out
+        Parameters
+        ----------
+        freeEnergies : list of dictionaries
+            contains dictionaries with free energies and their errors
+        filename : string
+            file to which free energies should be written
+            default = None
+        fmt : string
+            format string for the free energies, e.g. '%s, %f, %f\n'
+            Default = None
+        """
         if filename != None:
             f = open(filename, 'w')
         else:
@@ -170,9 +239,6 @@ class PerturbationGraph(object):
                 else:
                     r_energy_k = k
                     r_energy_v = v
-            if intermed_ID != None:
-                if r_energy_k.startswith(intermed_ID):
-                    continue
             if filename != None:
                 if fmt == None:
                     f.write('%s, %f, %f\n' %(r_energy_k,r_energy_v,error))
@@ -186,58 +252,6 @@ class PerturbationGraph(object):
         if filename != None:
             f.close()
 
-    def _write_free_energies_bm(self, freeEnergies, filename, fmt, intermed_ID, kT):
-        mols = {}
-        for data in freeEnergies:
-            keys = data.keys()
-            if keys[0]!='error':
-                mol = keys[0]
-            else:
-                mol = keys[1]
-            nrg = data[mol]
-            err = data['error']
-            elems = mol.split("_BM")
-            moln = elems[0]
-            try:
-                mols[moln]
-            except KeyError:
-                mols[moln] = []
-            mols[moln].append([nrg, err])
-
-        #print (mols)
-
-        ids = mols.keys()
-        ids.sort()
-        if filename !=None:
-            f = open(filename, 'w')
-        else:
-            print ('#FREE ENERGIES ARE:')
-        for mol in ids:
-            if intermed_ID != None:
-                if mol.startswith(intermed_ID):
-                    continue
-            nrgtot = 0.0
-            errtot = 0.0
-            for nrg, err in mols[mol]:
-                nrgtot += np.exp(-nrg/kT)
-                errtot += err**2
-            nrgtot = -kT*np.log(nrgtot)
-            errtot = np.sqrt(errtot)
-            if filename != None:
-                if fmt == None:
-                    f.write('%s, %f, %f\n' %(mol,nrgtot,errtot))
-                else:
-                    f.write(fmt %(mol,nrgtot,errtot))
-            else:
-                if fmt == None:
-                    print('{:10s} {:5.3f} ± {:5.3f}'.format(mol,nrgtot,errtot))
-                    #print ("%s %5.2f +/- %5.2f" % (mol,nrgtot,errtot))
-                else: 
-                    print(fmt %(mol,nrgtot,errtot))
-        if filename != None:
-            f.close()
-
-
     def compute_average_paths(self, target_node):
         r"""
         Parameters
@@ -246,6 +260,7 @@ class PerturbationGraph(object):
             node to which all possible paths are computed
         """
         #Get all relative free energies with respect to node x
+        self._weighted_paths = False 
         self._pathAveages = []
         for n in self._compoundList:
             paths = nx.shortest_simple_paths(self._graph,target_node , n)
@@ -278,6 +293,7 @@ class PerturbationGraph(object):
             string name of the target node as defined in the networkx graph
         """
         #Get all relative free energies with respect to node x
+        self._weighted_paths = True 
         self._weightedPathAverages = []
         a = {target_node:0.0}
         a['error']=0.0
@@ -351,10 +367,13 @@ class PerturbationGraph(object):
 
     @property
     def freeEnergyInKcal(self):
-        if self.weighted_paths:
-            return self._weightedPathAverages
+        if self._free_energies:
+            return self._free_energies
         else:
-            return self._pathAverages
+            if self._weighted_paths:
+                return self._weightedPathAverages
+            else:
+                return self._pathAverages
 
     @property
     def compoundList(self):
