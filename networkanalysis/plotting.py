@@ -27,6 +27,7 @@ import matplotlib.pylab as plt
 import matplotlib
 import seaborn as sns
 import copy
+import numpy as np
 sns.set_style("ticks")
 sns.set_context("notebook", font_scale = 2)
 
@@ -36,19 +37,19 @@ class FreeEnergyPlotter(object):
         nothing = []
         
 
-    def plot_bar_plot(self, set_ddg, graph_est, keys):
+    def plot_bar_plot(self, exp_DDG, comp_DDG, compound_names):
         r1_weight = []
         r2_weight = []
         labels = []
-        for e in keys:
-            for i in graph_ddg:
+        for e in compound_names:
+            for i in exp_DDG:
                 if i.has_key(e):
                     r1_weight.append(i[e])
-        for e in keys:
-            for i in graph_est:
+        for e in compound_names:
+            for i in comp_DDG:
                 if i.has_key(e):
                     r2_weight.append(i[e])
-        labels = keys
+        labels = compound_names
 
         N = len(r1_weight)*2
 
@@ -62,7 +63,7 @@ class FreeEnergyPlotter(object):
         # add some text for labels, title and axes ticks
         ax.set_ylabel(r'$\Delta \Delta G$ in [kcal/mol]', fontsize=15)
         ax.set_xticks(ind + width)
-        ax.set_xticklabels(labels, fontsize=15)
+        ax.set_xticklabels(labels, fontsize=15, rotation='vertical')
 
         ax.legend((rects1[0], rects2[0]), ('experimental', 'computational'), fontsize=15)
         sns.despine()
