@@ -64,6 +64,11 @@ if '__main__' == __name__:
              metavar='STRING'
     )
     parser.add_argument(
+             "--intermed_ID",
+             help="Name of the reference compound with respect to which the free energy should be computed",
+             metavar='STRING'
+    )
+    parser.add_argument(
              '-o',
              '--network_output',
              help='File to write final free energies to based on network analysis',
@@ -115,6 +120,7 @@ if '__main__' == __name__:
     print ("\n\n########################## Parameters ######################################")
     print ("filelist: \t\t\t\t%s" %args.files)
     print ("target compound: \t\t\t%s" %args.target_compound)
+    print ("intermed_ID: \t\t\t\t%s" %args.intermed_ID)
     print ("Network computed free energies file: \t%s" %args.network_output)
     print ("IC50s datafile: \t\t\t%s" %args.experiments)
     print ("Correlation statistics:\t\t\t%s" %args.stats)
@@ -128,10 +134,11 @@ if '__main__' == __name__:
         for f in args.files[1:]:
             pG.add_data_to_graph(f)
     pG.compute_weighted_avg_paths(args.target_compound)
+    pG.format_free_energies(merge_BM=True, intermed_ID=args.intermed_ID, weighted = True)
     comp_DDG = pG.freeEnergyInKcal
 
     if args.save_data:
-        pG.save_average_paths(args.network_output, comp_DDG)
+        pG.write_free_energies(comp_DDG, filename=args.network_output)
 
     #Read experimental data
     if args.experiments != None:
@@ -148,6 +155,8 @@ if '__main__' == __name__:
             print (" tau and error = %f ± %f" %(stats.tau, stats.tau_error))
             print (" MUE and error = %f ± %f" %(stats.mue, stats.mue_error))
             print ("#############################################################################\n\n")
+
+    #create plots 
 
 
     ############################################################################
