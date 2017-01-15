@@ -15,3 +15,9 @@ Internal Alpha version
 =====
 - Added preformatting functionality for free energies from the perturbation graph
 - Set standardised file writing and std out printing of free energies
+
+0.2.1
+-----
+- added plotting functionality for bar plot and scatter plot
+- updated driver script to work with API changes form 0.2.0 release
+
