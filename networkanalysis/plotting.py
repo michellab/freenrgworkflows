@@ -116,7 +116,7 @@ class FreeEnergyPlotter(object):
         ax.legend((rects1[0], rects2[0]), legend, fontsize=15)
         sns.despine()
 
-    def plot_scatter_plot(self, color=sns.xkcd_rgb["pale red"]):
+    def plot_scatter_plot(self, xlabel=r'experimental $\Delta \Delta G$ in [kcal/mol]', ylabel=r'computed $\Delta \Delta G$ in [kcal/mol]', color=sns.xkcd_rgb["pale red"]):
         r"""Do a barplot of two different free energy series
         Parameters
         ----------
@@ -136,8 +136,8 @@ class FreeEnergyPlotter(object):
         plt.xlim(np.min(self.dataseries1[:,0])-1, np.max(self.dataseries1[:,0])+1)
         plt.ylim(np.min(self.dataseries2[:,0])-1, np.max(self.dataseries2[:,0])+1)
         # add some text for labels, title and axes ticks
-        plt.ylabel(r'$\Delta \Delta G$ in [kcal/mol]', fontsize=15)
-        plt.xlabel(r'$\Delta \Delta G$ in [kcal/mol]', fontsize=15)
+        plt.ylabel(xlabel, fontsize=15)
+        plt.xlabel(ylabel, fontsize=15)
 
         sns.despine()
 
