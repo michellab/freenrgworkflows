@@ -54,13 +54,9 @@ class FreeEnergyPlotter(object):
         cl_exp = set().union(*(d.keys() for d in DDG_series1))
         cl_comp= set().union(*(d.keys() for d in DDG_series2))
         ids = list(set(cl_exp).intersection(cl_comp))
-        print ids
         if 'error' in ids:
-            print ids
             index = ids.index('error')
             ids.pop(index)
-            print ids
-        print ids
         if compound_list == None:
             print (np.sort(ids))
             self.compound_list = np.sort(ids)
@@ -70,7 +66,6 @@ class FreeEnergyPlotter(object):
                 sys.exit(1)
             print ('hi2')
             self.compound_list = compound_list
-        print self.compound_list
 
         for e in self.compound_list:
             s1 = False
