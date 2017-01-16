@@ -64,7 +64,6 @@ class FreeEnergyPlotter(object):
             if not set(compound_list).issubset(ids):
                 print("The compound list you have supplied does not match the compounds in the compounds in the dataseries")
                 sys.exit(1)
-            print ('hi2')
             self.compound_list = compound_list
 
         for e in self.compound_list:
