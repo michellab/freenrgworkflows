@@ -21,3 +21,7 @@ Internal Alpha version
 - added plotting functionality for bar plot and scatter plot
 - updated driver script to work with API changes form 0.2.0 release
 
+0.2.2
+-----
+- minor fixes
+

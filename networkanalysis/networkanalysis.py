@@ -105,6 +105,17 @@ class PerturbationGraph(object):
         else:
             self._graph = newGraph
 
+    def remove_compound_from_graph(self, compound):
+        r""" removes a node from the current graph
+        Parameters
+        ----------
+        compound : string
+            name of the compound to be removed from the graph
+
+        """
+        self._graph.remove_node(compound)
+        self._compoundList = self._graph.nodes()
+
     def _symmetrize_graph(self, graph):
         r"""symmetrises the graph and computes backward and forward averages where  given. 
         Parameters
@@ -133,7 +144,7 @@ class PerturbationGraph(object):
                 symmetrizedGraph.add_edge(v,u,weight=assymetric_w, error = assymetric_e)
         return symmetrizedGraph
 
-    def format_free_energies(self, merge_BM = False,  kT=0.594, intermed_ID = None, compound_order = None, weighted = True):
+    def format_free_energies(self, merge_BM = False,  kT=0.594, intermed_ID = None, compound_order = None, weighted = True, path_dictionary = None):
         r"""
          Parameters
         ----------
@@ -158,9 +169,11 @@ class PerturbationGraph(object):
             self._free_energies = []
         mols = {}
         if weighted:
-            if not self._weightedPathAverages:
+            if not self._weightedPathAverages and path_dictionary==None:
                 print('compute weithed path averages for network first in order to format free energies')
                 sys.exit(1)
+            elif path_dictionary:
+                freeEnergies = path_dictionary
             else:
                 freeEnergies = self._weightedPathAverages
         else:
@@ -328,7 +341,7 @@ class PerturbationGraph(object):
             self._weightedPathAverages.append(a)
 
 
-    def get_cycles(self, max_length=4):
+    def get_cycles(self, max_length=4, closure_threshold=1.0, print_all=False):
         r"""
         TODO: elaborate and find good way of saving this information 
         """
@@ -344,8 +357,15 @@ class PerturbationGraph(object):
                     sum= sum+ self._graph.get_edge_data(c[node], c[node+1])['weight']
                     error = error +(self._graph.get_edge_data(c[node], c[node+1])['error'])**2
                 error = np.sqrt(error)
-            if len(c)<=max_length:
-                print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' %(c,sum,error))
+                if len(c)<=max_length and not print_all:
+                    if sum > closure_threshold:
+                        print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' %(c,sum,error))
+                if print_all:
+                    print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' %(c,sum,error))
+
+    def rename_compounds():
+        print ('This function is not implemented yet')
+        sys.exit(1)
 
     @property
     def graph(self):

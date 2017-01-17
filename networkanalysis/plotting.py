@@ -54,13 +54,9 @@ class FreeEnergyPlotter(object):
         cl_exp = set().union(*(d.keys() for d in DDG_series1))
         cl_comp= set().union(*(d.keys() for d in DDG_series2))
         ids = list(set(cl_exp).intersection(cl_comp))
-        print ids
         if 'error' in ids:
-            print ids
             index = ids.index('error')
             ids.pop(index)
-            print ids
-        print ids
         if compound_list == None:
             print (np.sort(ids))
             self.compound_list = np.sort(ids)
@@ -68,9 +64,7 @@ class FreeEnergyPlotter(object):
             if not set(compound_list).issubset(ids):
                 print("The compound list you have supplied does not match the compounds in the compounds in the dataseries")
                 sys.exit(1)
-            print ('hi2')
             self.compound_list = compound_list
-        print self.compound_list
 
         for e in self.compound_list:
             s1 = False
@@ -122,7 +116,7 @@ class FreeEnergyPlotter(object):
         ax.legend((rects1[0], rects2[0]), legend, fontsize=15)
         sns.despine()
 
-    def plot_scatter_plot(self, color=sns.xkcd_rgb["pale red"]):
+    def plot_scatter_plot(self, xlabel=r'experimental $\Delta \Delta G$ in [kcal/mol]', ylabel=r'computed $\Delta \Delta G$ in [kcal/mol]', color=sns.xkcd_rgb["pale red"]):
         r"""Do a barplot of two different free energy series
         Parameters
         ----------
@@ -142,8 +136,8 @@ class FreeEnergyPlotter(object):
         plt.xlim(np.min(self.dataseries1[:,0])-1, np.max(self.dataseries1[:,0])+1)
         plt.ylim(np.min(self.dataseries2[:,0])-1, np.max(self.dataseries2[:,0])+1)
         # add some text for labels, title and axes ticks
-        plt.ylabel(r'$\Delta \Delta G$ in [kcal/mol]', fontsize=15)
-        plt.xlabel(r'$\Delta \Delta G$ in [kcal/mol]', fontsize=15)
+        plt.ylabel(xlabel, fontsize=15)
+        plt.xlabel(ylabel, fontsize=15)
 
         sns.despine()
 
