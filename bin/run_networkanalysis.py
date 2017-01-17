@@ -33,6 +33,7 @@ __email__ = "antonia.mey@ed.ac.uk"
 from networkanalysis.networkanalysis import *
 from networkanalysis.experiments import *
 from networkanalysis.stats import *
+import networkanalysis
 from argparse import ArgumentParser, FileType
 import numpy as np
 
@@ -116,7 +117,7 @@ if '__main__' == __name__:
     #   write header
     #
     ############################################################################
-    print ("\n\n##########################NETWORKANALYSIS WITH NETWORKX ######################################")
+    print ("\n\n################# NETWORKANALYSIS v. %s WITH NETWORKX ################################" %networkanalysis.__version__)
     print ("\n\n########################## Parameters ######################################")
     print ("filelist: \t\t\t\t%s" %args.files)
     print ("target compound: \t\t\t%s" %args.target_compound)

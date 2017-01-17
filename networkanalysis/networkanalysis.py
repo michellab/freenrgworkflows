@@ -133,7 +133,7 @@ class PerturbationGraph(object):
                 symmetrizedGraph.add_edge(v,u,weight=assymetric_w, error = assymetric_e)
         return symmetrizedGraph
 
-    def format_free_energies(self, merge_BM = False,  kT=0.594, intermed_ID = None, compound_order = None, weighted = True):
+    def format_free_energies(self, merge_BM = False,  kT=0.594, intermed_ID = None, compound_order = None, weighted = True, path_dictionary = None):
         r"""
          Parameters
         ----------
@@ -158,9 +158,11 @@ class PerturbationGraph(object):
             self._free_energies = []
         mols = {}
         if weighted:
-            if not self._weightedPathAverages:
+            if not self._weightedPathAverages and path_dictionary==None:
                 print('compute weithed path averages for network first in order to format free energies')
                 sys.exit(1)
+            elif path_dictionary:
+                freeEnergies = path_dictionary
             else:
                 freeEnergies = self._weightedPathAverages
         else:
