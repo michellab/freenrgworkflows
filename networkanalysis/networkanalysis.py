@@ -105,6 +105,17 @@ class PerturbationGraph(object):
         else:
             self._graph = newGraph
 
+    def remove_compound_from_graph(self, compound):
+        r""" removes a node from the current graph
+        Parameters
+        ----------
+        compound : string
+            name of the compound to be removed from the graph
+
+        """
+        self._graph.remove_node(compound)
+        self._compoundList = self._graph.nodes()
+
     def _symmetrize_graph(self, graph):
         r"""symmetrises the graph and computes backward and forward averages where  given. 
         Parameters
@@ -351,6 +362,10 @@ class PerturbationGraph(object):
                         print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' %(c,sum,error))
                 if print_all:
                     print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' %(c,sum,error))
+
+    def rename_compounds():
+        print ('This function is not implemented yet')
+        sys.exit(1)
 
     @property
     def graph(self):
