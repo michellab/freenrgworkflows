@@ -330,7 +330,7 @@ class PerturbationGraph(object):
             self._weightedPathAverages.append(a)
 
 
-    def get_cycles(self, max_length=4):
+    def get_cycles(self, max_length=4, closure_threshold=1.0, print_all=False):
         r"""
         TODO: elaborate and find good way of saving this information 
         """
@@ -346,8 +346,11 @@ class PerturbationGraph(object):
                     sum= sum+ self._graph.get_edge_data(c[node], c[node+1])['weight']
                     error = error +(self._graph.get_edge_data(c[node], c[node+1])['error'])**2
                 error = np.sqrt(error)
-            if len(c)<=max_length:
-                print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' %(c,sum,error))
+                if len(c)<=max_length and not print_all:
+                    if sum > closure_threshold:
+                        print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' %(c,sum,error))
+                if print_all:
+                    print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' %(c,sum,error))
 
     @property
     def graph(self):
