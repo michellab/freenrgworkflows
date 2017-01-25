@@ -100,6 +100,7 @@ class PerturbationGraph(object):
                     error = 0.5*np.sqrt(z['error']**2+w['error']**2)
                     self._graph.remove_edge(u,v)
                     self._graph.add_edge(u,v,weight=mean_edge,error=error)
+                    print self._graph.get_edge_data(u,v)
                 else:
                     self._graph.add_edge(u, v, w)
         else:
@@ -134,7 +135,7 @@ class PerturbationGraph(object):
                 w_backward = graph.get_edge_data(v,u)
                 avg_weight_forw = np.mean([w_forward['weight'], -w_backward['weight']])
                 avg_weight_back = -avg_weight_forw
-                error = np.std([w_forward['weight'], -w_backward['weight']])
+                error = np.std([w_forward['weight'], -w_backward['weight']])/np.sqrt(2.0)
                 symmetrizedGraph.add_edge(u,v,weight=avg_weight_forw, error = error)
                 symmetrizedGraph.add_edge(v,u,weight=avg_weight_back, error = error)
         for u,v,w in symmetrizedGraph.edges(data=True):
@@ -265,6 +266,13 @@ class PerturbationGraph(object):
         if filename != None:
             f.close()
 
+    def shift_free_energies(shift_value=0.0):
+        for d in self.freeEnergies:
+            for k,v in d.iteritems():
+                if k != 'error':
+                    d[k] = d[k]-shift_value  
+
+
     def compute_average_paths(self, target_node):
         r"""
         Parameters
@@ -356,7 +364,7 @@ class PerturbationGraph(object):
                 for node in range(len(c)-1):
                     sum= sum+ self._graph.get_edge_data(c[node], c[node+1])['weight']
                     error = error +(self._graph.get_edge_data(c[node], c[node+1])['error'])**2
-                error = np.sqrt(error)
+                error = np.sqrt(len(c))
                 if len(c)<=max_length and not print_all:
                     if sum > closure_threshold:
                         print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' %(c,sum,error))
