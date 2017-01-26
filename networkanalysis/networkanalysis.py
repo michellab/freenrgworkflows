@@ -100,7 +100,6 @@ class PerturbationGraph(object):
                     error = 0.5*np.sqrt(z['error']**2+w['error']**2)
                     self._graph.remove_edge(u,v)
                     self._graph.add_edge(u,v,weight=mean_edge,error=error)
-                    print self._graph.get_edge_data(u,v)
                 else:
                     self._graph.add_edge(u, v, w)
         else:
@@ -364,7 +363,7 @@ class PerturbationGraph(object):
                 for node in range(len(c)-1):
                     sum= sum+ self._graph.get_edge_data(c[node], c[node+1])['weight']
                     error = error +(self._graph.get_edge_data(c[node], c[node+1])['error'])**2
-                error = np.sqrt(len(c))
+                error = np.sqrt(error)
                 if len(c)<=max_length and not print_all:
                     if sum > closure_threshold:
                         print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' %(c,sum,error))
