@@ -137,6 +137,8 @@ class PerturbationGraph(object):
                 error = np.std([w_forward['weight'], -w_backward['weight']])/np.sqrt(2.0)
                 symmetrizedGraph.add_edge(u,v,weight=avg_weight_forw, error = error)
                 symmetrizedGraph.add_edge(v,u,weight=avg_weight_back, error = error)
+            else:
+                symmetrizedGraph.add_edge(u,v,weight=w_forward['weight'], error = w_forward['error'])
         for u,v,w in symmetrizedGraph.edges(data=True):
             if not symmetrizedGraph.has_edge(v,u):
                 assymetric_w = -w['weight']
