@@ -141,7 +141,7 @@ class freeEnergyStats(object):
 
         sumdev = 0.0
         for x in range(0,len(series1)):
-            sumdev += abs( series1[x] - series2[x] )
+            sumdev += abs(series1[x] - series2[x])
         sumdev /= len(series1)
 
         #print sumdev
