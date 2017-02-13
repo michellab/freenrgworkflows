@@ -37,6 +37,10 @@ class freeEnergyStats(object):
         self._R2 = None
         self._tau = None
         self._mue = None
+        self._R_error = None
+        self._R2_error = None
+        self._tau_error = None
+        self._mue_error = None
         self._compound_list = None
 
         self.data_comp = None
@@ -157,8 +161,8 @@ class freeEnergyStats(object):
             print('Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence')
             sys.exit(1)
         sorted_data = np.sort(data)
-        lower = floor((1-interval)*len(sorted_data))
-        upper = ceil(interval*len(sorted_data))
+        lower = np.floor((1-interval)*len(sorted_data))
+        upper = np.ceil(interval*len(sorted_data))
         return[sorted_data[lower], sorted_data[upper]]
 
 
@@ -168,7 +172,9 @@ class freeEnergyStats(object):
 
     @property
     def R_error(self):
-        return self._confidence(self._R)
+        if self._R_error is None:
+            self._R_error =  self._confidence(self._R)
+        return self._R_error
 
     @property
     def R2(self):
@@ -176,7 +182,9 @@ class freeEnergyStats(object):
 
     @property
     def R2_error(self):
-        return self._confidence(self._R2)
+        if self._R2_error is None:
+            self._R2_error =  self._confidence(self._R2)
+        return self._R2_error
 
     @property
     def tau(self):
@@ -184,7 +192,9 @@ class freeEnergyStats(object):
 
     @property
     def tau_error(self):
-        return self._confidence(self._tau)
+        if self._tau_error is None:
+            self._tau_error =  self._confidence(self._tau)
+        return self._tau_error
 
     @property
     def mue(self):
@@ -192,6 +202,8 @@ class freeEnergyStats(object):
 
     @property
     def mue_error(self):
-        return self._confidence(self._mue)
+        if self._mue_error is None:
+            self._mue_error =  self._confidence(self._mue)
+        return self._mue_error
 
 
