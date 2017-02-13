@@ -28,6 +28,7 @@ import numpy as np
 import networkx as nx
 import scipy.stats
 import copy
+import sys
 
 
 class ExperimentalData(object):
@@ -79,6 +80,36 @@ class ExperimentalData(object):
             a_kJ[key] = self._kTkJ*np.log(r)
             a_kJ['error'] = 2.5
             self._DG_in_kJ.append(a_kJ)
+
+    def read_free_energies(self,filename, kcal=True, comment='#'):
+        r"""Read free energies from a file
+        
+
+        """
+        self._keys = []
+        self._ic50s = []
+        self._DG_in_kcal = []
+        self._DG_in_kJ = []
+        if not kcal:
+            print ('This has not been implemented yet')
+            sys.exit(1)
+        else:
+            f = open(filename, 'r')
+            for line in f.readlines():
+                if line.startswith(comment):
+                    continue
+                curr_ic50 = {}
+                fields = line.split(',')
+                if fields[1] == 'NoPred':
+                    continue
+                F_kcal = {}
+                F_kcal[fields[0]] = float(fields[1])
+                F_kcal['error'] = float(fields[2].strip())
+                #note down the keys
+                self._keys.append(fields[0])
+                self._DG_in_kcal.append(F_kcal) #append to list of ic50 compounds. 
+            f.close()
+
 
     @property
     def ic50s(self):
