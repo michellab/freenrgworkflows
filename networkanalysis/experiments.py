@@ -74,11 +74,11 @@ class ExperimentalData(object):
             r = float(ic50/float(self._ic50s[reference_index][self._referenceCompound]))
             a_kcal = {}
             a_kcal[key] = self._kTkcal*np.log(r)
-            a_kcal['error'] = 0.6
+            a_kcal['error'] = self._kTkcal*np.log(2)
             self._DG_in_kcal.append(a_kcal)
             a_kJ = {}
             a_kJ[key] = self._kTkJ*np.log(r)
-            a_kJ['error'] = 2.5
+            a_kJ['error'] = self._kTkJ*np.log(2)
             self._DG_in_kJ.append(a_kJ)
 
     def read_free_energies(self,filename, kcal=True, comment='#'):
