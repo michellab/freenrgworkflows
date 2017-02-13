@@ -152,13 +152,23 @@ class freeEnergyStats(object):
         #print sumdev
         return sumdev
 
+    def _confidence(self,data, interval=0.68):
+        if interval <0 or interval>1:
+            print('Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence')
+            sys.exit(1)
+        sorted_data = np.sort(data)
+        lower = floor((1-interval)*len(sorted_data))
+        upper = ceil(interval*len(sorted_data))
+        return[sorted_data[lower], sorted_data[upper]]
+
+
     @property
     def R(self):
         return np.mean(self._R)
 
     @property
     def R_error(self):
-        return np.std(self._R)
+        return self._confidence(self._R)
 
     @property
     def R2(self):
@@ -166,7 +176,7 @@ class freeEnergyStats(object):
 
     @property
     def R2_error(self):
-        return np.std(self._R2)
+        return self._confidence(self._R2)
 
     @property
     def tau(self):
@@ -174,7 +184,7 @@ class freeEnergyStats(object):
 
     @property
     def tau_error(self):
-        return np.std(self._tau)
+        return self._confidence(self._tau)
 
     @property
     def mue(self):
@@ -182,6 +192,6 @@ class freeEnergyStats(object):
 
     @property
     def mue_error(self):
-        return np.std(self._mue)
+        return self._confidence(self._mue)
 
 
