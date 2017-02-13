@@ -105,8 +105,8 @@ class FreeEnergyPlotter(object):
         width = 0.35*2       # the width of the bars
         fig, ax = plt.subplots(figsize=(8,6))
 
-        rects1 = ax.bar(ind,  self.dataseries1[:,0], width, yerr = self.dataseries1[:,1], color=colors[0])
-        rects2 = ax.bar(ind + width,  self.dataseries2[:,0], width, yerr = self.dataseries2[:,1], color=colors[1])
+        rects1 = ax.bar(ind,  self.dataseries1[:,0], width, yerr = self.dataseries1[:,1], color=colors[0], ecolor='k')
+        rects2 = ax.bar(ind + width,  self.dataseries2[:,0], width, yerr = self.dataseries2[:,1], color=colors[1], ecolor='k')
 
         # add some text for labels, title and axes ticks
         ax.set_ylabel(r'$\Delta \Delta G$ in [kcal/mol]', fontsize=15)
