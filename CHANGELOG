@@ -25,3 +25,7 @@ Internal Alpha version
 -----
 - minor fixes
 
+0.3.0
+=====
+- std error bug fix
+- renaming of some functions

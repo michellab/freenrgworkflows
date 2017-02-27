@@ -37,7 +37,14 @@ class freeEnergyStats(object):
         self._R2 = None
         self._tau = None
         self._mue = None
+        self._R_error = None
+        self._R2_error = None
+        self._tau_error = None
+        self._mue_error = None
         self._compound_list = None
+
+        self.data_comp = None
+        self.data_exp = None
 
     def generate_statistics(self, comp_data, exp_data, compound_list = None, repeats = 1000):
         r"""
@@ -64,8 +71,8 @@ class freeEnergyStats(object):
         else:
             self._compound_list = compound_list
 
-        data_comp = []
-        data_exp = []
+        self.data_comp = []
+        self.data_exp = []
         err_comp = []
         self._R = []
         self._R2 = []
@@ -76,20 +83,22 @@ class freeEnergyStats(object):
             exp = (item for item in exp_data if item.has_key(k)).next()
             val = comp[k]
             err = comp['error']
-            data_comp.append([val,err])
+            self.data_comp.append([val,err])
             val = exp[k]
-            data_exp.append(val)
+            self.data_exp.append(val)
         for i in range(repeats):
             new_data = []
-            for i in range(len(data_comp)):
-                val = data_comp[i][0]
-                err = data_comp[i][1]
+            for i in range(len(self.data_comp)):
+                val = self.data_comp[i][0]
+                err = self.data_comp[i][1]
                 if err != 0.0:
                     val2 = np.random.normal(val, err)
-                new_data.append(val2)
-            R2, R = self._calculate_r2(new_data, data_exp)
-            tau = self._calculate_tau(new_data, data_exp)
-            mue = self._calculate_mue(new_data, data_exp)
+                    new_data.append(val2)
+                else:
+                    new_data.append(val)
+            R2, R = self._calculate_r2(new_data, self.data_exp)
+            tau = self._calculate_tau(new_data, self.data_exp)
+            mue = self._calculate_mue(new_data, self.data_exp)
             self._R.append(R)
             self._R2.append(R2)
             self._tau.append(tau)
@@ -141,11 +150,21 @@ class freeEnergyStats(object):
 
         sumdev = 0.0
         for x in range(0,len(series1)):
-            sumdev += abs( series1[x] - series2[x] )
+            sumdev += abs(series1[x] - series2[x])
         sumdev /= len(series1)
 
         #print sumdev
         return sumdev
+
+    def _confidence(self,data, interval=0.68):
+        if interval <0 or interval>1:
+            print('Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence')
+            sys.exit(1)
+        sorted_data = np.sort(data)
+        lower = np.floor((1-interval)*len(sorted_data))
+        upper = np.ceil(interval*len(sorted_data))
+        return[sorted_data[lower], sorted_data[upper]]
+
 
     @property
     def R(self):
@@ -153,7 +172,9 @@ class freeEnergyStats(object):
 
     @property
     def R_error(self):
-        return np.std(self._R)/np.sqrt(len(self._R))
+        if self._R_error is None:
+            self._R_error =  self._confidence(self._R)
+        return self._R_error
 
     @property
     def R2(self):
@@ -161,7 +182,9 @@ class freeEnergyStats(object):
 
     @property
     def R2_error(self):
-        return np.std(self._R2)/np.sqrt(len(self._R2))
+        if self._R2_error is None:
+            self._R2_error =  self._confidence(self._R2)
+        return self._R2_error
 
     @property
     def tau(self):
@@ -169,7 +192,9 @@ class freeEnergyStats(object):
 
     @property
     def tau_error(self):
-        return np.std(self._tau)/np.sqrt(len(self._tau))
+        if self._tau_error is None:
+            self._tau_error =  self._confidence(self._tau)
+        return self._tau_error
 
     @property
     def mue(self):
@@ -177,6 +202,8 @@ class freeEnergyStats(object):
 
     @property
     def mue_error(self):
-        return np.std(self._mue)/np.sqrt(len(self._mue))
+        if self._mue_error is None:
+            self._mue_error =  self._confidence(self._mue)
+        return self._mue_error
 
 

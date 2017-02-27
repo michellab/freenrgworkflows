@@ -134,9 +134,11 @@ class PerturbationGraph(object):
                 w_backward = graph.get_edge_data(v,u)
                 avg_weight_forw = np.mean([w_forward['weight'], -w_backward['weight']])
                 avg_weight_back = -avg_weight_forw
-                error = np.std([w_forward['weight'], -w_backward['weight']])
+                error = np.std([w_forward['weight'], -w_backward['weight']])/np.sqrt(2.0)
                 symmetrizedGraph.add_edge(u,v,weight=avg_weight_forw, error = error)
                 symmetrizedGraph.add_edge(v,u,weight=avg_weight_back, error = error)
+            else:
+                symmetrizedGraph.add_edge(u,v,weight=w_forward['weight'], error = w_forward['error'])
         for u,v,w in symmetrizedGraph.edges(data=True):
             if not symmetrizedGraph.has_edge(v,u):
                 assymetric_w = -w['weight']
@@ -264,6 +266,13 @@ class PerturbationGraph(object):
                     print (fmt %(r_energy_k,r_energy_v,error))
         if filename != None:
             f.close()
+
+    def shift_free_energies(shift_value=0.0):
+        for d in self.freeEnergies:
+            for k,v in d.iteritems():
+                if k != 'error':
+                    d[k] = d[k]-shift_value  
+
 
     def compute_average_paths(self, target_node):
         r"""
