@@ -57,7 +57,7 @@ class FreeEnergyPlotter(object):
         if 'error' in ids:
             index = ids.index('error')
             ids.pop(index)
-        if compound_list == None:
+        if compound_list is None:
             print (np.sort(ids))
             self.compound_list = np.sort(ids)
         else:
@@ -113,8 +113,9 @@ class FreeEnergyPlotter(object):
         ax.set_xticks(ind + width)
         ax.set_xticklabels(self.labels, fontsize=15, rotation='vertical')
 
-        ax.legend((rects1[0], rects2[0]), legend, fontsize=15)
+        ax.legend((rects1[0], rects2[0]), legend, fontsize=15, loc='best')
         sns.despine()
+        return ax, fig
 
     def plot_scatter_plot(self, xlabel=r'experimental $\Delta \Delta G$ in [kcal/mol]', ylabel=r'computed $\Delta \Delta G$ in [kcal/mol]', color=sns.xkcd_rgb["pale red"]):
         r"""Do a barplot of two different free energy series
