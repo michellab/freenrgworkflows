@@ -161,8 +161,8 @@ class freeEnergyStats(object):
             print('Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence')
             sys.exit(1)
         sorted_data = np.sort(data)
-        lower = np.floor((1-interval)*len(sorted_data))
-        upper = np.ceil(interval*len(sorted_data))
+        lower = int(np.floor((1-interval)*len(sorted_data)))
+        upper = int(np.ceil(interval*len(sorted_data)))
         return[sorted_data[lower], sorted_data[upper]]
 
 
