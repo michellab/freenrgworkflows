@@ -38,3 +38,7 @@ Internal Alpha version
 0.3.4
 -----
 - bug fix for confidence intervals
+
+0.3.5
+-----
+- bug fix for symmetrising graph of identical backward and forward simulations
