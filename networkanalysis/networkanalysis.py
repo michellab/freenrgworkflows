@@ -135,6 +135,8 @@ class PerturbationGraph(object):
                 avg_weight_forw = np.mean([w_forward['weight'], -w_backward['weight']])
                 avg_weight_back = -avg_weight_forw
                 error = np.std([w_forward['weight'], -w_backward['weight']])/np.sqrt(2.0)
+                if error == 0:
+                    error = np.mean([w_forward['error'], -w_backward['error']])
                 symmetrizedGraph.add_edge(u,v,weight=avg_weight_forw, error = error)
                 symmetrizedGraph.add_edge(v,u,weight=avg_weight_back, error = error)
             else:
