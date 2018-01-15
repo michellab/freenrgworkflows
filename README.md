@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/freenrgworkflows.svg)](https://badge.fury.io/py/freenrgworkflows)
+
 # FreeEnergyNetworkAnalysis
 ===========================
 
