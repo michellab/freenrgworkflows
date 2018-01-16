@@ -7,3 +7,5 @@ install:
 # command to run tests
 script:
   - python -m pytest tests/ --cov-report term-missing --cov networkanalysis  
+after_success:
+  - codecov

@@ -3,7 +3,6 @@
 [![codecov](https://codecov.io/gh/michellab/freenrgworkflows/branch/devel/graph/badge.svg)](https://codecov.io/gh/michellab/freenrgworkflows)
 
 # FreeEnergyNetworkAnalysis
-===========================
 
 ## What is FreeEnergyNetworkAnalysis?
 
