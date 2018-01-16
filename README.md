@@ -1,5 +1,6 @@
 [![PyPI version](https://badge.fury.io/py/freenrgworkflows.svg)](https://badge.fury.io/py/freenrgworkflows)
 [![Build Status](https://travis-ci.org/michellab/freenrgworkflows.svg?branch=devel)](https://travis-ci.org/michellab/freenrgworkflows)
+[![codecov](https://codecov.io/gh/michellab/freenrgworkflows/branch/devel/graph/badge.svg)](https://codecov.io/gh/michellab/freenrgworkflows)
 
 # FreeEnergyNetworkAnalysis
 ===========================
