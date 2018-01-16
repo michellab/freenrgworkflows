@@ -35,13 +35,13 @@ Internal Alpha version
 - minor fixes
 - D3R GC 2 version 
 
-0.3.3
+0.3.4
 -----
-- minor fixes and bug fixes
+- bug fix for confidence intervals
 
-0.3.4 and 0.3.5
----------------
-- some dodgy version changes that were porbably uneccesary for some minor bug fixes
+0.3.5
+-----
+- bug fix for symmetrising graph of identical backward and forward simulations
 
 0.4.0
 =====
@@ -49,3 +49,5 @@ Internal Alpha version
 [- consistent python 3.5+ only support]
 [- updated commandline tool to work with python 3.5 and API]
 [- desired feature: automatically generated jupyter notebook full of analysis]
+
+
