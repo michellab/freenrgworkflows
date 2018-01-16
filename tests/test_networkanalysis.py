@@ -1,5 +1,9 @@
 import pytest
-from networkanalysis import * 
+from networkanalysis.networkanalysis import *
+
+#@pytest.fixture
+#def pG():
+#    return networkanalysis.PerturbationGraph()
 
 def test_populate_pert_graph():
     pG = PerturbationGraph()
