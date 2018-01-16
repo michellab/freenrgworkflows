@@ -20,15 +20,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = "Antonia Mey", "Julien Michel"
+__author__ = "Antonia Mey"
 __email__ = "antonia.mey@ed.ac.uk"
 
 
 import numpy as np
 import networkx as nx
-import scipy.stats
 import copy
 import sys
+import warnings
 
 
 class PerturbationGraph(object):
@@ -67,8 +67,8 @@ class PerturbationGraph(object):
             self._graph = self._symmetrize_graph(graph)
             self._compoundList = np.sort(self._graph.nodes())
         else:
-            print ('Use the method add_data_to_graph, to add further data to an existing graph')
-            exit(-1)
+            warnings.warn(UserWarning("Warning...........Use the method add_data_to_graph, to add further data to an existing graph"))
+            return 1
 
     def add_data_to_graph(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight', float),('error',float))):
         r"""
@@ -373,7 +373,7 @@ class PerturbationGraph(object):
                     print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' %(c,sum,error))
 
     def rename_compounds():
-        print ('This function is not implemented yet')
+        warnings.warn(Not) ('This function is not implemented yet')
         sys.exit(1)
 
     @property
