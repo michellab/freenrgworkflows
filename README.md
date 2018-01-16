@@ -11,7 +11,7 @@ It is a python (3.5+) module for analysing alchemical free energy calculations f
 
 ## Installation
 with pip:   
-   `pip install freenergyworkflow`
+   `pip install freenergyworkflows`
 
 from github:  
  
