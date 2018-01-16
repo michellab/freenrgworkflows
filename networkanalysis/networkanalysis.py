@@ -186,7 +186,7 @@ class PerturbationGraph(object):
                 freeEnergies = self._pathAveages
 
         for data in freeEnergies:
-            keys = data.keys()
+            keys = list(data.keys())
             if keys[0]!='error':
                 mol = keys[0]
             else:
@@ -203,7 +203,7 @@ class PerturbationGraph(object):
             except KeyError:
                 mols[moln] = []
             mols[moln].append([nrg, err])
-        ids = mols.keys()
+        ids = list(mols.keys())
         ids.sort()
         if compound_order != None:
             if set(compound_order).issubset(ids):
