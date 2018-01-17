@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import warnings
 from networkanalysis.stats import *
 
 @pytest.fixture
@@ -29,4 +30,20 @@ def test_calculate_mue(stats):
     mue = 1.5125000000000002
     test_mue= stats._calculate_mue(a,b)
     assert(test_mue == mue)
+
+@pytest.mark.parametrize('interval', [(-72), (4)])
+def test_confidence_warnings(stats, interval):
+    data = np.array([1,5,7,3,8,29,0])
+    warn_string = 'Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence'
+    with pytest.warns(UserWarning) as warnmessg:
+        stats._confidence(data,interval=-1)
+        # warnings.warn(warn_string, UserWarning)
+    assert len(warnmessg) == 1
+    assert warnmessg[0].message.args[0] == warn_string
+
+def test_confidence(stats):
+    data = np.array([5,4,6,7,8,7,7.8,6])
+    assert (stats._confidence(data) == [6.0, 7.8])
+
+
 

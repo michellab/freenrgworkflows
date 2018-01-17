@@ -28,6 +28,7 @@ import numpy as np
 import networkx as nx
 import scipy.stats
 import copy
+import warnings
 
 class freeEnergyStats(object):
     """docstring for freeEnergyStats"""
@@ -155,8 +156,8 @@ class freeEnergyStats(object):
 
     def _confidence(self,data, interval=0.68):
         if interval <0 or interval>1:
-            print('Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence')
-            sys.exit(1)
+            warnings.warn(UserWarning('Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence'))
+            return 1
         sorted_data = np.sort(data)
         lower = int(np.floor((1-interval)*len(sorted_data)))
         upper = int(np.ceil(interval*len(sorted_data)))
