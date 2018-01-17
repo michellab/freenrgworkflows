@@ -131,10 +131,7 @@ class freeEnergyStats(object):
                 # print cij
                 sumwijcij += wij*cij
                 sumwij += wij
-                # print i,j,series[0][j],serie[j],series[0][i],serie[i],val,wij*cij,wij
-                # sys.exit(-1)
         PI = sumwijcij/sumwij
-        #print PI
         return PI
 
     def _calculate_r2 (self, series1, series2):
