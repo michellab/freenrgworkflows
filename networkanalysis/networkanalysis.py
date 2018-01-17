@@ -250,7 +250,7 @@ class PerturbationGraph(object):
         else:
             print ('#FREE ENERGIES ARE:')
         for d in freeEnergies:
-            for k,v in d.iteritems():
+            for k,v in iter(d.items()):
                 if k == 'error':
                     error = v
                 else:
@@ -271,7 +271,7 @@ class PerturbationGraph(object):
 
     def shift_free_energies(shift_value=0.0):
         for d in self.freeEnergies:
-            for k,v in d.iteritems():
+            for k,v in iter(d.items()):
                 if k != 'error':
                     d[k] = d[k]-shift_value  
 

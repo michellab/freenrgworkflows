@@ -70,14 +70,14 @@ class FreeEnergyPlotter(object):
             s1 = False
             s2 = False
             for i in DDG_series1:
-                if i.has_key(e):
+                if e in i:
                     data = []
                     data.append(i[e])
                     data.append(i['error'])
                     self.dataseries1.append(data)
                     s1 = True
             for i in DDG_series2:
-                if i.has_key(e):
+                if e in i:
                     data = []
                     data.append(i[e])
                     data.append(i['error'])

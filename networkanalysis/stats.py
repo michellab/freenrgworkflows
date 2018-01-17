@@ -79,8 +79,8 @@ class freeEnergyStats(object):
         self._tau = []
         self._mue = []
         for k in self._compound_list:
-            comp = (item for item in comp_data if item.has_key(k)).next()
-            exp = (item for item in exp_data if item.has_key(k)).next()
+            comp = next(item for item in comp_data if k in item)
+            exp = next(item for item in exp_data if k in item)
             val = comp[k]
             err = comp['error']
             self.data_comp.append([val,err])
