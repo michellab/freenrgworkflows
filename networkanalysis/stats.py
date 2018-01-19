@@ -46,6 +46,7 @@ class freeEnergyStats(object):
 
         self.data_comp = None
         self.data_exp = None
+        self._confidence_interval = 0.68
 
     def generate_statistics(self, comp_data, exp_data, compound_list = None, repeats = 1000):
         r"""
@@ -105,8 +106,10 @@ class freeEnergyStats(object):
             self._tau.append(tau)
             self._mue.append(mue)
 
-    def calculate_pi(self, series1, series2):
-        sumwijcij = 0.0
+    def _calculate_predictive_index(self, series1, series2):
+        '''r This fucntion needs to be implemented properly'''
+        raise NotImplementedError('Calculating predictive index not impletmented yet.')
+        '''sumwijcij = 0.0
         sumwij = 0.0
 
         keys = series1.keys()
@@ -134,6 +137,7 @@ class freeEnergyStats(object):
                 sumwij += wij
         PI = sumwijcij/sumwij
         return PI
+        '''
 
     def _calculate_r2 (self, series1, series2):
         r_value,p = scipy.stats.pearsonr(series1,series2)
@@ -154,15 +158,21 @@ class freeEnergyStats(object):
         #print sumdev
         return sumdev
 
-    def _confidence(self,data, interval=0.68):
-        if interval <0 or interval>1:
-            warnings.warn(UserWarning('Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence'))
-            return 1
+    def _confidence(self,data):
         sorted_data = np.sort(data)
-        lower = int(np.floor((1-interval)*len(sorted_data)))
-        upper = int(np.ceil(interval*len(sorted_data)))
+        lower = int(np.floor((1-self.confidence_interval)*len(sorted_data)))
+        upper = int(np.ceil(self.confidence_interval*len(sorted_data)))
         return[sorted_data[lower], sorted_data[upper]]
 
+    @property
+    def confidence_interval(self):
+        return self._confidence_interval
+
+    @confidence_interval.setter
+    def confidence_interval(self, confidence_interval):
+        if confidence_interval <0 or confidence_interval>1:
+            warnings.warn(UserWarning('Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence'))
+        self._confidence_interval = confidence_interval
 
     @property
     def R(self):
@@ -170,8 +180,7 @@ class freeEnergyStats(object):
 
     @property
     def R_error(self):
-        if self._R_error is None:
-            self._R_error =  self._confidence(self._R)
+        self._R_error =  self._confidence(self._R)
         return self._R_error
 
     @property
@@ -180,8 +189,7 @@ class freeEnergyStats(object):
 
     @property
     def R2_error(self):
-        if self._R2_error is None:
-            self._R2_error =  self._confidence(self._R2)
+        self._R2_error =  self._confidence(self._R2)
         return self._R2_error
 
     @property
@@ -190,8 +198,7 @@ class freeEnergyStats(object):
 
     @property
     def tau_error(self):
-        if self._tau_error is None:
-            self._tau_error =  self._confidence(self._tau)
+        self._tau_error =  self._confidence(self._tau)
         return self._tau_error
 
     @property
@@ -200,8 +207,7 @@ class freeEnergyStats(object):
 
     @property
     def mue_error(self):
-        if self._mue_error is None:
-            self._mue_error =  self._confidence(self._mue)
+        self._mue_error =  self._confidence(self._mue)
         return self._mue_error
 
 
