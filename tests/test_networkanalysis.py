@@ -17,7 +17,11 @@ def test_compountList(pG):
 
 def test_double_call_pert_graph_not_None(pG):
     pG.populate_pert_graph('tests/io/graph.csv')
-    assert(pG.populate_pert_graph('tests/io/graph.csv')==1)
+    warn_string = 'Warning...........Use the method add_data_to_graph, to add further data to an existing graph'
+    with pytest.warns(UserWarning) as warnmessg:
+        pG.populate_pert_graph('tests/io/graph.csv')
+    assert len(warnmessg) == 1
+    assert warnmessg[0].message.args[0] == warn_string
 
 #def test_symmetrize_graph():
 #    newGraph = nx.read_edgelist('tests/io/graph.csv', delimiter=',', comments='#', nodetype=str, data=(('weight', float),('error',float)))
