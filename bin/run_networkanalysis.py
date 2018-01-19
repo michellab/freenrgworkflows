@@ -87,13 +87,18 @@ if '__main__' == __name__:
             help="Print correclation statistics between computated and experimental data",
             action='store_true'
     )
-    # parser.add_argument(
-    #         "--maxiter",
-    #         help="limit the number of fixed point iterations",
-    #         type=int,
-    #         default=100,
-    #         metavar='INT'
-    # )
+    parser.add_argument(
+            "--comments",
+            help="Identifier used to mark comments in the input network files",
+            metavar='STRING',
+            default='#'
+    )
+    parser.add_argument(
+            "--delimiter",
+            help="delimiter used in the input network files",
+            metavar='STRING',
+            default=','
+    )
     parser.add_argument(
             "--save_data",
             help="Saves network data output",
@@ -108,8 +113,8 @@ if '__main__' == __name__:
     #
     ############################################################################
     if 1 > len(args.files):
-        print ("ERROR: you must give at least one networkanalysis networkx compatible file")
-        exit(1)
+        raise IOError ("ERROR: you must give at least one networkanalysis networkx compatible file")
+
 
 
     ############################################################################
@@ -120,6 +125,8 @@ if '__main__' == __name__:
     print ("\n\n################# NETWORKANALYSIS v. %s WITH NETWORKX ################################" %networkanalysis.__version__)
     print ("\n\n########################## Parameters ######################################")
     print ("filelist: \t\t\t\t%s" %args.files)
+    print ("file comment: \t\t\t\t%s" %args.comments)
+    print ("file delimiter: \t\t\t\t%s" %args.delimiter)
     print ("target compound: \t\t\t%s" %args.target_compound)
     print ("intermed_ID: \t\t\t\t%s" %args.intermed_ID)
     print ("Network computed free energies file: \t%s" %args.network_output)
@@ -130,10 +137,10 @@ if '__main__' == __name__:
 
     #Do the network analysis
     pG = PerturbationGraph()
-    pG.populate_pert_graph(args.files[0])
+    pG.populate_pert_graph(args.files[0], delimiter = args.delimiter, comments = args.comments)
     if len(args.files) > 1:
         for f in args.files[1:]:
-            pG.add_data_to_graph(f)
+            pG.add_data_to_graph(f, delimiter = args.delimiter, comments = args.comments)
     pG.compute_weighted_avg_paths(args.target_compound)
     pG.format_free_energies(merge_BM=True, intermed_ID=args.intermed_ID, weighted = True)
     comp_DDG = pG.freeEnergyInKcal
