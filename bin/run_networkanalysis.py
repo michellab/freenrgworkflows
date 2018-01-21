@@ -66,19 +66,20 @@ if '__main__' == __name__:
     )
     parser.add_argument(
              "--intermed_ID",
-             help="Name of the reference compound with respect to which the free energy should be computed",
+             help="String identifier for intermediates, e.g. INT_01",
              metavar='STRING'
     )
     parser.add_argument(
              '-o',
              '--network_output',
-             help='File to write final free energies to based on network analysis',
-             metavar='FILE'
+             help='File to write final free energies to, based on network analysis',
+             metavar='FILE',
+             default = None
     )
     parser.add_argument(
              '-e',
              '--experiments',
-             help='File containing experimental data results',
+             help='File containing experimental IC50 data',
              default = None,
              metavar='FILE'
     )
@@ -100,9 +101,16 @@ if '__main__' == __name__:
             default=','
     )
     parser.add_argument(
-            "--save_data",
-            help="Saves network data output",
-            action='store_true'
+            "--merge_BM",
+            help="Merge binding modes, assuming they are identified as compoun_BM1 and compound_BM2",
+            metavar='BOOLEAN',
+            default='True'
+    )
+    parser.add_argument(
+            "--weighted",
+            help="Compute weithed path averages when true and unweighted path averages when false",
+            metavar='BOOLEAN',
+            default='True'
     )
 
     args = parser.parse_args()
@@ -113,7 +121,7 @@ if '__main__' == __name__:
     #
     ############################################################################
     if 1 > len(args.files):
-        raise IOError ("ERROR: you must give at least one networkanalysis networkx compatible file")
+        raise OSError ('You must give at least one networkanalysis networkx compatible file')
 
 
 
@@ -126,12 +134,13 @@ if '__main__' == __name__:
     print ("\n\n########################## Parameters ######################################")
     print ("filelist: \t\t\t\t%s" %args.files)
     print ("file comment: \t\t\t\t%s" %args.comments)
-    print ("file delimiter: \t\t\t\t%s" %args.delimiter)
+    print ("file delimiter: \t\t\t%s" %args.delimiter)
     print ("target compound: \t\t\t%s" %args.target_compound)
     print ("intermed_ID: \t\t\t\t%s" %args.intermed_ID)
     print ("Network computed free energies file: \t%s" %args.network_output)
     print ("IC50s datafile: \t\t\t%s" %args.experiments)
-    print ("Correlation statistics:\t\t\t%s" %args.stats)
+    print ("Weidghted averages:\t\t\t%s" %args.weighted)
+    print ("Merge binding modes:\t\t\t%s" %args.merge_BM)
     print ("#############################################################################\n\n")
 
 
@@ -141,28 +150,36 @@ if '__main__' == __name__:
     if len(args.files) > 1:
         for f in args.files[1:]:
             pG.add_data_to_graph(f, delimiter = args.delimiter, comments = args.comments)
-    pG.compute_weighted_avg_paths(args.target_compound)
-    pG.format_free_energies(merge_BM=True, intermed_ID=args.intermed_ID, weighted = True)
+    target_compound = args.target_compound
+    if target_compound == None:
+        target_compound = list(pG.graph.nodes)[0]  
+        warnings.warn(UserWarning("No target compound given, using the first compound in the node list: %s" %target_compound))
+    if args.weighted == False:
+        pG.compute_avg_paths(target_compound)
+    else:
+        pG.compute_weighted_avg_paths(target_compound)
+    pG.format_free_energies(merge_BM=args.merge_BM, intermed_ID=args.intermed_ID, weighted = args.weighted)
     comp_DDG = pG.freeEnergyInKcal
 
-    if args.save_data:
+    if args.network_output != None:
         pG.write_free_energies(comp_DDG, filename=args.network_output)
+    else: 
+        pG.write_free_energies(comp_DDG)
 
     #Read experimental data
     if args.experiments != None:
         ex = ExperimentalData()
-        ex.compute_DDG_from_IC50s(args.experiments,reference=args.target_compound)
+        ex.compute_DDG_from_IC50s(args.experiments,reference=target_compound)
         exp_DDG = ex.freeEnergiesInKcal
-        if args.stats:
-            stats = freeEnergyStats()
-            stats.generate_statistics(comp_DDG,exp_DDG,repeats=1000)
+        stats = freeEnergyStats()
+        stats.generate_statistics(comp_DDG,exp_DDG,repeats=1000)
 
-            print ("\n\n########################## Statistics ######################################")
-            print (" R and error = %f ± %f" %(stats.R, stats.R_error))
-            print (" R2 and error = %f ± %f" %(stats.R2, stats.R2_error))
-            print (" tau and error = %f ± %f" %(stats.tau, stats.tau_error))
-            print (" MUE and error = %f ± %f" %(stats.mue, stats.mue_error))
-            print ("#############################################################################\n\n")
+        print ("\n\n########################## Statistics ######################################")
+        print (" R and std = %f ± %f" %(stats.R, stats.R_std))
+        print (" R2 and std = %f ± %f" %(stats.R2, stats.R2_std))
+        print (" tau and std = %f ± %f" %(stats.tau, stats.tau_std))
+        print (" MUE and std = %f ± %f" %(stats.mue, stats.mue_std))
+        print ("#############################################################################\n\n")
 
     #create plots 
 
