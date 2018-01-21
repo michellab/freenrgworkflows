@@ -45,9 +45,8 @@ Internal Alpha version
 
 0.4.0
 =====
-[- pytest testing framework added]
-[- consistent python 3.5+ only support]
-[- updated commandline tool to work with python 3.5 and API]
-[- desired feature: automatically generated jupyter notebook full of analysis]
+- pytest testing framework added
+- consistent python 3.5+ only support
+- updated commandline tool to work with python 3.5+ and API
 
 
