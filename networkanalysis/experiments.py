@@ -83,7 +83,8 @@ class ExperimentalData(object):
 
     def read_free_energies(self,filename, kcal=True, comment='#'):
         r"""Read free energies from a file
-        
+        filename : string
+            Filename containing free energies        
 
         """
         self._keys = []
@@ -91,8 +92,7 @@ class ExperimentalData(object):
         self._DG_in_kcal = []
         self._DG_in_kJ = []
         if not kcal:
-            print ('This has not been implemented yet')
-            sys.exit(1)
+            raise(NotImplementedError('This has not been implemented yet'))
         else:
             f = open(filename, 'r')
             for line in f.readlines():
