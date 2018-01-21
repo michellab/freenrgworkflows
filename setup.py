@@ -40,7 +40,7 @@ setup(
             'Topic :: Scientific/Engineering :: Physics'
     ],
     keywords=[ 'relative free energy', 'perturbation network' ],
-    url='https://github.com/michelllab/freenrgworkflows',
+    url='https://github.com/michellab/freenrgworkflows',
     maintainer='Antonia Mey',
     maintainer_email='antonia.mey@ed.ac.uk',
     license='LGPLv3+',
