@@ -179,6 +179,10 @@ class freeEnergyStats(object):
         return np.mean(self._R)
 
     @property
+    def R_std(self):
+        return np.std(self._R)
+
+    @property
     def R_error(self):
         self._R_error =  self._confidence(self._R)
         return self._R_error
@@ -186,6 +190,10 @@ class freeEnergyStats(object):
     @property
     def R2(self):
         return np.mean(self._R2)
+
+    @property
+    def R2_std(self):
+        return np.std(self._R2)
 
     @property
     def R2_error(self):
@@ -197,12 +205,20 @@ class freeEnergyStats(object):
         return np.mean(self._tau)
 
     @property
+    def tau_std(self):
+        return np.std(self._tau)
+
+    @property
     def tau_error(self):
         self._tau_error =  self._confidence(self._tau)
         return self._tau_error
 
     @property
     def mue(self):
+        return np.mean(self._mue)
+
+    @property
+    def mue_std(self):
         return np.mean(self._mue)
 
     @property
