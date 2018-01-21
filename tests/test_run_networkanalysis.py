@@ -38,7 +38,7 @@ def test_wrong_target_compound(executable, graph_file):
     assert(p.returncode==1)
     assert(err_string in stderr)
 
-def test_safe_data(executable, graph_file):
+def test_save_data(executable, graph_file):
     filename = os.path.join(os.getcwd(), 'tests', 'io', 'test_out.dat')
     cmd = [sys.executable, executable, graph_file ,'--target_compound=FXR17','--network_output='+filename]
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
@@ -47,7 +47,7 @@ def test_safe_data(executable, graph_file):
     assert(Path(filename).exists())
     os.remove(Path(filename))
 
-def test_do_not_safe_data(executable, graph_file):
+def test_do_not_save_data(executable, graph_file):
     cmd = [sys.executable, executable, graph_file ,'--target_compound=FXR17']
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
     stdout, stderr = p.communicate()
