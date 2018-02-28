@@ -33,6 +33,7 @@ __email__ = "antonia.mey@ed.ac.uk"
 from networkanalysis.networkanalysis import *
 from networkanalysis.experiments import *
 from networkanalysis.stats import *
+from networkanalysis.plots import write_notebook
 import networkanalysis
 from argparse import ArgumentParser, FileType
 import numpy as np
@@ -112,6 +113,12 @@ if '__main__' == __name__:
             metavar='BOOLEAN',
             default='True'
     )
+#    parser.add_argument(
+#            "--generate_notebook",
+#            help="Autogenerates a jupyter notebook with plots",
+#            metvar='BOOlEAN',
+#            default='False'
+#    )
 
     args = parser.parse_args()
 
@@ -182,6 +189,8 @@ if '__main__' == __name__:
         print ("#############################################################################\n\n")
 
     #create plots 
+    if args.generate_notebook:
+        networkanalysis.plotting.write_notebook()
 
 
     ############################################################################

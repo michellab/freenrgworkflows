@@ -2,7 +2,7 @@
 
 # This file is part of freenrgworkflows.
 #
-# Copyright 2016,2017 Julien Michel Lab, University of Edinburgh (UK)
+# Copyright 2016-2018 Julien Michel Lab, University of Edinburgh (UK)
 #
 # freenrgworkflows is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by

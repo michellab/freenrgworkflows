@@ -184,4 +184,5 @@ class FreeEnergyPlotter(object):
         plt.ylabel('P(%s)'%label)
         sns.despine()
 
+            
 
