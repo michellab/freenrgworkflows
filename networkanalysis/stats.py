@@ -219,7 +219,7 @@ class freeEnergyStats(object):
 
     @property
     def mue_std(self):
-        return np.mean(self._mue)
+        return np.std(self._mue)
 
     @property
     def mue_error(self):
