@@ -5,7 +5,7 @@
 
 # This file is part of freenrgworkflows.
 #
-# Copyright 2016,2017 Julien Michel Lab, University of Edinburgh (UK)
+# Copyright 2016,2017 2018 Julien Michel Lab, University of Edinburgh (UK)
 #
 # freenrgworkflows is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -27,24 +27,30 @@ import nbformat as nbf
 
 
 class JupyterNotebookCreator(object):
-    def __init__(self, nbname, networkfiles=None, experimentalfile=None):
+    def __init__(self, nbname, networkfiles=None, experimentalfile=None, custom_heading=None):
+        r"""
+        Parameters:
+        -----------
+        nbname : string
+            Name of the notebook to be generated
+        networkfiles : list
+            list of string containing network pertubration edges
+        experimentalfile : string
+            filename for a file either containing either IC50s or K_d
+        """
         self._notebook_name = nbname
         self._networkfiles = networkfiles
         self._experimentalfile = experimentalfile
+        self._custom_heading = custom_heading
         pass
 
     def _generate_heading(self, custom_heading = None):
         if not custom_heading:
             heading = """\
-<<<<<<< HEAD
 # Default Perturbation network analysis notebook
-This notebook was automatically generated using freenrgworkflows
-Author: Antonia Mey
+This notebook was automatically generated using freenrgworkflows   
+Author: Antonia Mey   
 Email: antonia.mey@ed.ac.uk"""
-=======
-# Default Perturbation network analysis notebook for free energy calculations
-This notebook was automatically generated using freenrgworkflow"""
->>>>>>> db13f19e78f3ee5baf5e68f5adf78578e673e5d6
         else:
             heading = custom_heading
         return nbf.v4.new_markdown_cell(heading)
@@ -53,8 +59,10 @@ This notebook was automatically generated using freenrgworkflow"""
         if not custom_imports:
             imports = """\
 %pylab inline
-from networkanalysis.networkanalysis import *
-from networkanalysis.plotting import *
+import networkanalysis.networkanalysis as n_graph
+import networkanalysis.plotting as n_plot
+import networkanalysis.experiments as n_ex
+import networkanalysis.stats as n_stats
 import networkanalysis
 networkanalysis.__version__"""
         else:
@@ -75,7 +83,7 @@ networkanalysis.__version__"""
 
         pG = """\
 # Creating and populating the perturbation network
-pG = PerturbationGraph()
+pG = n_graph.PerturbationGraph()
 # Change the path below to the csv file containing the individual perturbations
 pG.populate_pert_graph('/path/to/network/csv/file')
 # Uncomment below if you have run multiple runs for some perturbations and add file path
@@ -83,7 +91,6 @@ pG.populate_pert_graph('/path/to/network/csv/file')
 target_compound = pG.compoundList[0] #change this to your target comound
 pG.compute_weighted_avg_paths(target_compound)
 pG.format_free_energies(merge_BM=True,intermed_ID='INT')
-<<<<<<< HEAD
 computed_relative_DDGs = pG.freeEnergyInKcal
 print ("Free energies computed from the perturbation network are: ")
 print ("---------------------------------------- ")
@@ -99,7 +106,7 @@ The cells below will read in your experimental data. Just replace the path to yo
 
 
         exp_code = """\
-experiments = ExperimentalData()
+experiments = n_ex.ExperimentalData()
 IC_50_file = 'path/to/ic50.csv'
 experiments.compute_DDG_from_IC50s(IC_50_file, reference=target_compound)
 expperimental_DDGs = experiments.freeEnergiesInKcal
@@ -116,7 +123,7 @@ Below a bar plot and scatter plot template for comparing experimental and comput
 
 
         plot_bar_code = """\
-plotter = FreeEnergyPlotter(expperimental_DDGs, computed_relative_DDGs)
+plotter = n_plot.FreeEnergyPlotter(expperimental_DDGs, computed_relative_DDGs)
 ax,fig = plotter.plot_bar_plot(legend=('experimental', 'computed'))"""
         cell_list.append(self._generate_custom_code_cell(plot_bar_code))
 
@@ -124,15 +131,6 @@ ax,fig = plotter.plot_bar_plot(legend=('experimental', 'computed'))"""
         plot_scatter_code = """\
 plotter.plot_scatter_plot() """
         cell_list.append(self._generate_custom_code_cell(plot_scatter_code))
-=======
-relative_DDGs = pG.freeEnergyInKcal
-print ("Free energies computed from the perturbation network are: ")
-print ("---------------------------------------- ")
-pG.write_free_energies(relative_DDGs)"""
-
-        cell_list.append(self._generate_custom_code_cell(pG))
-
->>>>>>> db13f19e78f3ee5baf5e68f5adf78578e673e5d6
         nb['cells'] = cell_list
         return nb
 
