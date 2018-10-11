@@ -27,20 +27,26 @@ import nbformat as nbf
 
 
 class JupyterNotebookCreator(object):
-    def __init__(self, nbname, networkfiles=None, experimentalfile=None, custom_heading=None):
+    def __init__(self, nbname, networkfile=None, experimentalfile=None, custom_heading=None):
         r"""
         Parameters:
         -----------
         nbname : string
             Name of the notebook to be generated
-        networkfiles : list
-            list of string containing network pertubration edges
+        networkfiles : string
+            string containing network pertubration edges,
         experimentalfile : string
             filename for a file either containing either IC50s or K_d
         """
         self._notebook_name = nbname
-        self._networkfiles = networkfiles
-        self._experimentalfile = experimentalfile
+        if networkfile is None:
+            self._networkfile = ['tests/io/ic50_exp.dat']
+        else: 
+            self._networkfile = networkfile
+        if experimentalfile is None:
+            self._experimentalfile = 'tests/io/ic50_exp.dat'
+        else:
+            self._experimentalfile = experimentalfile
         self._custom_heading = custom_heading
         pass
 
@@ -85,7 +91,7 @@ networkanalysis.__version__"""
 # Creating and populating the perturbation network
 pG = n_graph.PerturbationGraph()
 # Change the path below to the csv file containing the individual perturbations
-pG.populate_pert_graph('/path/to/network/csv/file')
+pG.populate_pert_graph('%s')
 # Uncomment below if you have run multiple runs for some perturbations and add file path
 #pG.add_data_to_graph('/path/to/additional/runs.csv')
 target_compound = pG.compoundList[0] #change this to your target comound
@@ -94,7 +100,7 @@ pG.format_free_energies(merge_BM=True,intermed_ID='INT')
 computed_relative_DDGs = pG.freeEnergyInKcal
 print ("Free energies computed from the perturbation network are: ")
 print ("---------------------------------------- ")
-pG.write_free_energies(computed_relative_DDGs)"""
+pG.write_free_energies(computed_relative_DDGs)""" %self._networkfile
 
         cell_list.append(self._generate_custom_code_cell(pG))
         exp_markdown = """
@@ -107,12 +113,12 @@ The cells below will read in your experimental data. Just replace the path to yo
 
         exp_code = """\
 experiments = n_ex.ExperimentalData()
-IC_50_file = 'path/to/ic50.csv'
+IC_50_file = '%s'
 experiments.compute_DDG_from_IC50s(IC_50_file, reference=target_compound)
-expperimental_DDGs = experiments.freeEnergiesInKcal
+experimental_DDGs = experiments.freeEnergiesInKcal
 print ("Free energies computed from IC50 data: ")
 print ("---------------------------------------- ")
-pG.write_free_energies(expperimental_DDGs)"""
+pG.write_free_energies(experimental_DDGs)""" %self._experimentalfile
         cell_list.append(self._generate_custom_code_cell(exp_code))
 
 
@@ -123,7 +129,7 @@ Below a bar plot and scatter plot template for comparing experimental and comput
 
 
         plot_bar_code = """\
-plotter = n_plot.FreeEnergyPlotter(expperimental_DDGs, computed_relative_DDGs)
+plotter = n_plot.FreeEnergyPlotter(experimental_DDGs, computed_relative_DDGs)
 ax,fig = plotter.plot_bar_plot(legend=('experimental', 'computed'))"""
         cell_list.append(self._generate_custom_code_cell(plot_bar_code))
 
@@ -131,6 +137,24 @@ ax,fig = plotter.plot_bar_plot(legend=('experimental', 'computed'))"""
         plot_scatter_code = """\
 plotter.plot_scatter_plot() """
         cell_list.append(self._generate_custom_code_cell(plot_scatter_code))
+
+        stats_markdown = """
+### Error analysis on typical statistical measures: R, MUE and Kendall tau
+Below are examples of how to resample from the data in order to obtain errorbars on Correlation coefficients, 
+mean unsigned errors and Kendall tau. Returned are confidence interavals of 1 sigma. However standard deviations can also 
+be returned. """
+        cell_list.append(self._generate_custom_markdown_cell(stats_markdown))
+
+        stats_code = """\
+stats = n_stats.freeEnergyStats()
+stats.generate_statistics(computed_relative_DDGs,experimental_DDGs,repeats=10000)
+r_error = stats.R_error
+tau_error = stats.tau_error
+mue_error = stats.mue_error
+print ("R is: %.2f < %.2f < %.2f" %(r_error[0], stats.R, r_error[1]))
+print ("Mue is: %.2f < %.2f < %.2f" %(mue_error[0], stats.mue, mue_error[1]))
+print ("tau is: %.2f < %.2f < %.2f" %(tau_error[0], stats.tau, tau_error[1]))"""
+        cell_list.append(self._generate_custom_code_cell(stats_code))
         nb['cells'] = cell_list
         return nb
 
@@ -139,7 +163,7 @@ plotter.plot_scatter_plot() """
 
     def write_notebook(self):
         nb = None
-        if self._networkfiles is None or self._experimentalfile is None:
+        if self._networkfile is None or self._experimentalfile is None:
             nb = self._generate_default_notebook()
         else:
             nb = self._generate_default_notebook()
