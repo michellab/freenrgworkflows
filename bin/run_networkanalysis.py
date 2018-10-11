@@ -5,7 +5,7 @@
 
 # This file is part of freenrgworkflows.
 #
-# Copyright 2016,2017 Julien Michel Lab, University of Edinburgh (UK)
+# Copyright 2016,2017 2018 Julien Michel Lab, University of Edinburgh (UK)
 #
 # freenrgworkflows is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -33,10 +33,11 @@ __email__ = "antonia.mey@ed.ac.uk"
 from networkanalysis.networkanalysis import *
 from networkanalysis.experiments import *
 from networkanalysis.stats import *
-from networkanalysis.plots import write_notebook
+from networkanalysis.jupyter import *
 import networkanalysis
 from argparse import ArgumentParser, FileType
 import numpy as np
+from os.path import *
 
 
 ####################################################################################################
@@ -113,12 +114,11 @@ if '__main__' == __name__:
             metavar='BOOLEAN',
             default='True'
     )
-#    parser.add_argument(
-#            "--generate_notebook",
-#            help="Autogenerates a jupyter notebook with plots",
-#            metvar='BOOlEAN',
-#            default='False'
-#    )
+    parser.add_argument(
+            "--generate_notebook",
+            help="Autogenerates a jupyter notebook with plots",
+            action='store_true'
+    )
 
     args = parser.parse_args()
 
@@ -181,16 +181,24 @@ if '__main__' == __name__:
         stats = freeEnergyStats()
         stats.generate_statistics(comp_DDG,exp_DDG,repeats=1000)
 
-        print ("\n\n########################## Statistics ######################################")
+        print ("\n########################## Statistics ######################################")
         print (" R and std = %f ± %f" %(stats.R, stats.R_std))
         print (" R2 and std = %f ± %f" %(stats.R2, stats.R2_std))
         print (" tau and std = %f ± %f" %(stats.tau, stats.tau_std))
         print (" MUE and std = %f ± %f" %(stats.mue, stats.mue_std))
         print ("#############################################################################\n\n")
 
-    #create plots 
     if args.generate_notebook:
-        networkanalysis.plotting.write_notebook()
+        if args.network_output != None:
+            print(basename(args.network_output))
+            nbname = "Default_Analysis.ipynb"
+        else:
+            nbname = "Default_Analysis.ipynb"
+        print ("\n###########################Generating jupyter notebook#######################")
+        book = JupyterNotebookCreator(nbname, networkfile=args.files[0], experimentalfile=args.experiments)
+        book.write_notebook()
+        print("#                       Notebook written to %s" %nbname)
+        print ("##############################################################################\n\n")
 
 
     ############################################################################
