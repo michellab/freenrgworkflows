@@ -36,10 +36,15 @@ class JupyterNotebookCreator(object):
     def _generate_heading(self, custom_heading = None):
         if not custom_heading:
             heading = """\
+<<<<<<< HEAD
 # Default Perturbation network analysis notebook
 This notebook was automatically generated using freenrgworkflows
 Author: Antonia Mey
 Email: antonia.mey@ed.ac.uk"""
+=======
+# Default Perturbation network analysis notebook for free energy calculations
+This notebook was automatically generated using freenrgworkflow"""
+>>>>>>> db13f19e78f3ee5baf5e68f5adf78578e673e5d6
         else:
             heading = custom_heading
         return nbf.v4.new_markdown_cell(heading)
@@ -78,6 +83,7 @@ pG.populate_pert_graph('/path/to/network/csv/file')
 target_compound = pG.compoundList[0] #change this to your target comound
 pG.compute_weighted_avg_paths(target_compound)
 pG.format_free_energies(merge_BM=True,intermed_ID='INT')
+<<<<<<< HEAD
 computed_relative_DDGs = pG.freeEnergyInKcal
 print ("Free energies computed from the perturbation network are: ")
 print ("---------------------------------------- ")
@@ -118,6 +124,15 @@ ax,fig = plotter.plot_bar_plot(legend=('experimental', 'computed'))"""
         plot_scatter_code = """\
 plotter.plot_scatter_plot() """
         cell_list.append(self._generate_custom_code_cell(plot_scatter_code))
+=======
+relative_DDGs = pG.freeEnergyInKcal
+print ("Free energies computed from the perturbation network are: ")
+print ("---------------------------------------- ")
+pG.write_free_energies(relative_DDGs)"""
+
+        cell_list.append(self._generate_custom_code_cell(pG))
+
+>>>>>>> db13f19e78f3ee5baf5e68f5adf78578e673e5d6
         nb['cells'] = cell_list
         return nb
 
