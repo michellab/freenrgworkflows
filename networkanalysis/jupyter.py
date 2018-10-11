@@ -36,8 +36,10 @@ class JupyterNotebookCreator(object):
     def _generate_heading(self, custom_heading = None):
         if not custom_heading:
             heading = """\
-# Default Perturbation network analysis notebook for free energy calculations
-This notebook was automatically generated using freenrgworkflow"""
+# Default Perturbation network analysis notebook
+This notebook was automatically generated using freenrgworkflows
+Author: Antonia Mey
+Email: antonia.mey@ed.ac.uk"""
         else:
             heading = custom_heading
         return nbf.v4.new_markdown_cell(heading)
@@ -76,13 +78,46 @@ pG.populate_pert_graph('/path/to/network/csv/file')
 target_compound = pG.compoundList[0] #change this to your target comound
 pG.compute_weighted_avg_paths(target_compound)
 pG.format_free_energies(merge_BM=True,intermed_ID='INT')
-relative_DDGs = pG.freeEnergyInKcal
+computed_relative_DDGs = pG.freeEnergyInKcal
 print ("Free energies computed from the perturbation network are: ")
 print ("---------------------------------------- ")
-pG.write_free_energies(relative_DDGs)"""
+pG.write_free_energies(computed_relative_DDGs)"""
 
         cell_list.append(self._generate_custom_code_cell(pG))
+        exp_markdown = """
+### Experimental data
+It is useful to compare computed free energies to experimental data.
+The cells below will read in your experimental data. Just replace the path to you IC50 data in the
+`IC_50_file` variable """
+        cell_list.append(self._generate_custom_markdown_cell(exp_markdown))
 
+
+        exp_code = """\
+experiments = ExperimentalData()
+IC_50_file = 'path/to/ic50.csv'
+experiments.compute_DDG_from_IC50s(IC_50_file, reference=target_compound)
+expperimental_DDGs = experiments.freeEnergiesInKcal
+print ("Free energies computed from IC50 data: ")
+print ("---------------------------------------- ")
+pG.write_free_energies(expperimental_DDGs)"""
+        cell_list.append(self._generate_custom_code_cell(exp_code))
+
+
+        plots_markdown = """
+### Typical plots
+Below a bar plot and scatter plot template for comparing experimental and computed free energy values"""
+        cell_list.append(self._generate_custom_markdown_cell(plots_markdown))
+
+
+        plot_bar_code = """\
+plotter = FreeEnergyPlotter(expperimental_DDGs, computed_relative_DDGs)
+ax,fig = plotter.plot_bar_plot(legend=('experimental', 'computed'))"""
+        cell_list.append(self._generate_custom_code_cell(plot_bar_code))
+
+
+        plot_scatter_code = """\
+plotter.plot_scatter_plot() """
+        cell_list.append(self._generate_custom_code_cell(plot_scatter_code))
         nb['cells'] = cell_list
         return nb
 
