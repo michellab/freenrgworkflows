@@ -41,6 +41,8 @@ class ExperimentalData(object):
         self._referenceCompound = None
         self._kTkcal = 0.0019872041*temperature
         self._kTkJ = 0.0083144621*temperature
+        self._RTkJ = 8.314459848*temperature
+        self._RTkcal = 1.987203611*temperature
         self._keys = None
 
     def compute_DDG_from_IC50s(self, filename, reference = None, smiles_string=False):
@@ -77,11 +79,11 @@ class ExperimentalData(object):
             ic50 = self._ic50s[k][key]
             r = float(ic50/float(self._ic50s[reference_index][self._referenceCompound]))
             a_kcal = {}
-            a_kcal[key] = self._kTkcal*np.log(r)
+            a_kcal[key] = self._RTkcal*np.log(r)
             a_kcal['error'] = self._kTkcal*np.log(2)
             self._DG_in_kcal.append(a_kcal)
             a_kJ = {}
-            a_kJ[key] = self._kTkJ*np.log(r)
+            a_kJ[key] = self._RTkJ*np.log(r)
             a_kJ['error'] = self._kTkJ*np.log(2)
             self._DG_in_kJ.append(a_kJ)
 
@@ -100,7 +102,7 @@ class ExperimentalData(object):
         self._keys = []
         with open(filename, 'r') as f:
             lines = f.readlines()
-            for l in lines:
+            for line in lines:
                 fields = line.strip().split(delimiter)
                 curr_kD = {}
                 curr_kD[fields[0]] = float(fields[1])
@@ -113,13 +115,13 @@ class ExperimentalData(object):
             reference_index = self._keys.index(self._referenceCompound)
         else:
             self._referenceCompound = self._keys[0]
+            reference_index = 0
 
 
         for k in range(len(self._keys)):
             key = self._keys[k]
-
             kD = self._kD[k][key]
-            r = float(float(self._kD[reference_index][self._referenceCompound])/kD)
+            r = float(kD/float(self._kD[reference_index][self._referenceCompound]))
             a_kcal = {}
             a_kcal[key] = self._kTkcal*np.log(r)
             a_kcal['error'] = self._kTkcal*np.log(2)
