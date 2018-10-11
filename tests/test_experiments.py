@@ -50,3 +50,8 @@ def test_from_IC50s_keys(ExpData300):
     cList = ['FXR45','FXR93','FXR91','FXR96','FXR46','FXR95','FXR98','FXR49','FXR17','FXR48','FXR47','FXR99','FXR102','FXR101','FXR100']
     assert(ExpData300.compoundList==cList)
 
+def test_from_kD_keys(ExpData300):
+    filename = os.path.join(os.getcwd(),'tests','io', 'kD_exp.dat')
+    ExpData300.compute_DDG_from_IC50s(filename, 'FXR17')
+    cList = ['FXR45','FXR93','FXR91','FXR96','FXR46','FXR95','FXR98','FXR49','FXR17','FXR48','FXR47','FXR99','FXR102','FXR101','FXR100']
+    assert(ExpData300.compoundList==cList)
