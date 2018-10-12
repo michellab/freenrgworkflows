@@ -49,4 +49,8 @@ Internal Alpha version
 - consistent python 3.5+ only support
 - updated commandline tool to work with python 3.5+ and API
 
-
+1.0.0
+=====
+- added automated generation of jupyter notebooks
+- added support for k_d experimetnal input
+- improved documentation
