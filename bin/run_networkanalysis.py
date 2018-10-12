@@ -37,7 +37,7 @@ from networkanalysis.jupyter import *
 import networkanalysis
 from argparse import ArgumentParser, FileType
 import numpy as np
-from os.path import *
+import os
 
 
 ####################################################################################################
@@ -57,24 +57,14 @@ if '__main__' == __name__:
     parser = ArgumentParser()
     parser.add_argument(
         'files',
-        help='networkx compatible csv file/files of the computed free energies with Sire',
+        help='Networkx compatible csv file/files of the computed free energies with Sire',
         nargs='*',
         metavar='FILE'
     )
     parser.add_argument(
-             "--target_compound",
-             help="Name of the reference compound with respect to which the free energy should be computed",
-             metavar='STRING'
-    )
-    parser.add_argument(
-             "--intermed_ID",
-             help="String identifier for intermediates, e.g. INT_01",
-             metavar='STRING'
-    )
-    parser.add_argument(
              '-o',
              '--network_output',
-             help='File to write final free energies to, based on network analysis',
+             help='File to write final free energies differences to',
              metavar='FILE',
              default = None
     )
@@ -86,8 +76,19 @@ if '__main__' == __name__:
              metavar='FILE'
     )
     parser.add_argument(
+             "--target_compound",
+             help="Name of the reference compound with respect to which the free energy should be computed",
+             metavar='STRING'
+    )
+    parser.add_argument(
+             "--intermed_ID",
+             help="String identifier for intermediates, e.g. INT_01 which should not be retained in the final output",
+             metavar='STRING'
+    )
+    parser.add_argument(
             "--stats",
-            help="Print correclation statistics between computated and experimental data",
+            help="Print correclation statistics between computated and experimental data, "
+            "this will only work if and experimental data file was given",
             action='store_true'
     )
     parser.add_argument(
@@ -116,7 +117,8 @@ if '__main__' == __name__:
     )
     parser.add_argument(
             "--generate_notebook",
-            help="Autogenerates a jupyter notebook with plots",
+            help="Autogenerates a jupyter notebook showing the working of the anaysis and useful plots. "
+            "The filename is the arguemtn of -o with a .ipynb extension.",
             action='store_true'
     )
 
@@ -190,8 +192,8 @@ if '__main__' == __name__:
 
     if args.generate_notebook:
         if args.network_output != None:
-            print(basename(args.network_output))
-            nbname = "Default_Analysis.ipynb"
+            nbname = os.path.splitext(args.network_output)[0]+'.ipynb'
+            print(nbname)
         else:
             nbname = "Default_Analysis.ipynb"
         print ("\n###########################Generating jupyter notebook#######################")
