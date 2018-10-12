@@ -40,12 +40,13 @@ def test_wrong_target_compound(executable, graph_file):
 
 def test_save_data(executable, graph_file):
     filename = os.path.join(os.getcwd(), 'tests', 'io', 'test_out.dat')
+    print(filename)
     cmd = [sys.executable, executable, graph_file ,'--target_compound=FXR17','--network_output='+filename]
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
     stdout, stderr = p.communicate()
     assert(p.returncode == 0)
     assert(Path(filename).exists())
-    os.remove(Path(filename))
+    os.remove((filename))
 
 def test_do_not_save_data(executable, graph_file):
     cmd = [sys.executable, executable, graph_file ,'--target_compound=FXR17']
@@ -56,11 +57,20 @@ def test_do_not_save_data(executable, graph_file):
 
 def test_statistics(executable, graph_file):
     filename = os.path.join(os.getcwd(), 'tests', 'io', 'ic50_exp.dat')
-    cmd = [sys.executable, executable, graph_file ,'--target_compound=FXR17','--experiments='+filename]
+    cmd = [sys.executable, executable, graph_file,'--target_compound=FXR17', '--stats', '--experiments='+filename]
     output = b'R and std'
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
     stdout, stderr = p.communicate()
     assert(p.returncode == 0)
     assert(output in stdout)
 
-    
+def test_jupyter_notebook(executable, graph_file):
+    filename = os.path.join(os.getcwd(), 'tests', 'io', 'test_out.dat')
+    nbfilename = os.path.join(os.getcwd(), 'tests', 'io', 'test_out.ipynb')
+    print(nbfilename)
+    cmd = [sys.executable, executable, graph_file, '--generate_notebook', '--network_output='+filename]
+    p = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    assert(p.returncode == 0)
+    assert(Path(nbfilename).exists())
+    os.remove((filename))

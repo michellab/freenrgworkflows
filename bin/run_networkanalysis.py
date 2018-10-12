@@ -176,7 +176,7 @@ if '__main__' == __name__:
         pG.write_free_energies(comp_DDG)
 
     #Read experimental data
-    if args.experiments != None:
+    if args.experiments != None and args.stats:
         ex = ExperimentalData()
         ex.compute_DDG_from_IC50s(args.experiments,reference=target_compound)
         exp_DDG = ex.freeEnergiesInKcal
