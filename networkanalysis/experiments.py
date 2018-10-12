@@ -79,11 +79,11 @@ class ExperimentalData(object):
             ic50 = self._ic50s[k][key]
             r = float(ic50/float(self._ic50s[reference_index][self._referenceCompound]))
             a_kcal = {}
-            a_kcal[key] = self._RTkcal*np.log(r)
+            a_kcal[key] = self._kTkcal*np.log(r)
             a_kcal['error'] = self._kTkcal*np.log(2)
             self._DG_in_kcal.append(a_kcal)
             a_kJ = {}
-            a_kJ[key] = self._RTkJ*np.log(r)
+            a_kJ[key] = self._kTkJ*np.log(r)
             a_kJ['error'] = self._kTkJ*np.log(2)
             self._DG_in_kJ.append(a_kJ)
 
@@ -123,14 +123,14 @@ class ExperimentalData(object):
             kD = self._kD[k][key]
             r = float(kD/float(self._kD[reference_index][self._referenceCompound]))
             a_kcal = {}
-            a_kcal[key] = self._kTkcal*np.log(r)
-            a_kcal['error'] = self._kTkcal*np.log(2)
+            a_kcal[key] = self._RTkcal*np.log(r)
+            a_kcal['error'] = self._RTkcal*np.log(2)
 
             #computation for KJ/mol
             self._DG_in_kcal.append(a_kcal)
             a_kJ = {}
-            a_kJ[key] = self._kTkJ*np.log(r)
-            a_kJ['error'] = self._kTkJ*np.log(2)
+            a_kJ[key] = self._RTkJ*np.log(r)
+            a_kJ['error'] = self._RTkJ*np.log(2)
             self._DG_in_kJ.append(a_kJ)
 
 

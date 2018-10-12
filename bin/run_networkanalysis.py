@@ -5,7 +5,7 @@
 
 # This file is part of freenrgworkflows.
 #
-# Copyright 2016,2017 Julien Michel Lab, University of Edinburgh (UK)
+# Copyright 2016,2017 2018 Julien Michel Lab, University of Edinburgh (UK)
 #
 # freenrgworkflows is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -33,9 +33,11 @@ __email__ = "antonia.mey@ed.ac.uk"
 from networkanalysis.networkanalysis import *
 from networkanalysis.experiments import *
 from networkanalysis.stats import *
+from networkanalysis.jupyter import *
 import networkanalysis
 from argparse import ArgumentParser, FileType
 import numpy as np
+import os
 
 
 ####################################################################################################
@@ -55,24 +57,14 @@ if '__main__' == __name__:
     parser = ArgumentParser()
     parser.add_argument(
         'files',
-        help='networkx compatible csv file/files of the computed free energies with Sire',
+        help='Networkx compatible csv file/files of the computed free energies with Sire',
         nargs='*',
         metavar='FILE'
     )
     parser.add_argument(
-             "--target_compound",
-             help="Name of the reference compound with respect to which the free energy should be computed",
-             metavar='STRING'
-    )
-    parser.add_argument(
-             "--intermed_ID",
-             help="String identifier for intermediates, e.g. INT_01",
-             metavar='STRING'
-    )
-    parser.add_argument(
              '-o',
              '--network_output',
-             help='File to write final free energies to, based on network analysis',
+             help='File to write final free energies differences to',
              metavar='FILE',
              default = None
     )
@@ -84,8 +76,19 @@ if '__main__' == __name__:
              metavar='FILE'
     )
     parser.add_argument(
+             "--target_compound",
+             help="Name of the reference compound with respect to which the free energy should be computed",
+             metavar='STRING'
+    )
+    parser.add_argument(
+             "--intermed_ID",
+             help="String identifier for intermediates, e.g. INT_01 which should not be retained in the final output",
+             metavar='STRING'
+    )
+    parser.add_argument(
             "--stats",
-            help="Print correclation statistics between computated and experimental data",
+            help="Print correclation statistics between computated and experimental data, "
+            "this will only work if and experimental data file was given",
             action='store_true'
     )
     parser.add_argument(
@@ -111,6 +114,12 @@ if '__main__' == __name__:
             help="Compute weithed path averages when true and unweighted path averages when false",
             metavar='BOOLEAN',
             default='True'
+    )
+    parser.add_argument(
+            "--generate_notebook",
+            help="Autogenerates a jupyter notebook showing the working of the anaysis and useful plots. "
+            "The filename is the arguemtn of -o with a .ipynb extension.",
+            action='store_true'
     )
 
     args = parser.parse_args()
@@ -167,21 +176,31 @@ if '__main__' == __name__:
         pG.write_free_energies(comp_DDG)
 
     #Read experimental data
-    if args.experiments != None:
+    if args.experiments != None and args.stats:
         ex = ExperimentalData()
         ex.compute_DDG_from_IC50s(args.experiments,reference=target_compound)
         exp_DDG = ex.freeEnergiesInKcal
         stats = freeEnergyStats()
         stats.generate_statistics(comp_DDG,exp_DDG,repeats=1000)
 
-        print ("\n\n########################## Statistics ######################################")
+        print ("\n########################## Statistics ######################################")
         print (" R and std = %f ± %f" %(stats.R, stats.R_std))
         print (" R2 and std = %f ± %f" %(stats.R2, stats.R2_std))
         print (" tau and std = %f ± %f" %(stats.tau, stats.tau_std))
         print (" MUE and std = %f ± %f" %(stats.mue, stats.mue_std))
         print ("#############################################################################\n\n")
 
-    #create plots 
+    if args.generate_notebook:
+        if args.network_output != None:
+            nbname = os.path.splitext(args.network_output)[0]+'.ipynb'
+            print(nbname)
+        else:
+            nbname = "Default_Analysis.ipynb"
+        print ("\n###########################Generating jupyter notebook#######################")
+        book = JupyterNotebookCreator(nbname, networkfile=args.files[0], experimentalfile=args.experiments)
+        book.write_notebook()
+        print("#                       Notebook written to %s" %nbname)
+        print ("##############################################################################\n\n")
 
 
     ############################################################################
