@@ -24,7 +24,11 @@ python setup.py install
 
 ## Testing your installation
 
-This will include information on how to run the tests
+To test the installation from the github repository you can use the pytest frame work by typing:
+```
+pytest --verbosity 1 tests
+```
+in the root directory, i.e. freenrgworkflows
 
 ## Getting started
 Networkanalysis provides both a simple API and a commandline tool in order to extract relative free energies
