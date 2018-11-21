@@ -95,10 +95,10 @@ def test_properties(stats):
     exp_dat = [{'a': 0.5, 'error': 0.02}, {'b': 1.7, 'error': 0.2}, {'f': -0.9, 'error': 0.06}]
     comp = [{'a': 0.5, 'error': 0.02}, {'b': 1.7, 'error': 0.2}, {'f': -0.9, 'error': 0.06}]
     stats.generate_statistics(comp, exp_dat, repeats=100)
-    assert (np.mean(stats._R) == stats.R)
-    assert (np.mean(stats._R2) == stats.R2)
-    assert (np.mean(stats._tau) == stats.tau)
-    assert (np.mean(stats._mue) == stats.mue)
+    assert (np.mean(stats._R) == stats.R_mean)
+    assert (np.mean(stats._R2) == stats.R2_mean)
+    assert (np.mean(stats._tau) == stats.tau_mean)
+    assert (np.mean(stats._mue) == stats.mue_mean)
 
 
 def test_property_errors(stats):
