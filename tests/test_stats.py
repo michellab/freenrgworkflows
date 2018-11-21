@@ -117,7 +117,7 @@ def test_property_errors(stats, boundaries):
     stats._mue = np.loadtxt('tests/io/mue.dat')
     stats._R2 = stats._R ** 2
     stats.confidence_interval = boundaries
-    assert (stats.R_confidence[1:] == [0.8682078950591153, 0.9338724006518556])
-    assert (stats.tau_confidence[1:] == [1.0, 1.0])
-    assert (stats.mue_confidence[1:] == [0.3562336854267332, 0.5309578343443963])
-    assert (stats.R2_confidence[1:] == [0.7537849490429798, 0.8721176606992599])
+    assert (stats.R_confidence[1:].all() == [0.8682078950591153, 0.9338724006518556])
+    assert (stats.tau_confidence[1:].all() == [1.0, 1.0])
+    assert (stats.mue_confidence[1:].all() == [0.3562336854267332, 0.5309578343443963])
+    assert (stats.R2_confidence[1:].all() == [0.7537849490429798, 0.8721176606992599])
