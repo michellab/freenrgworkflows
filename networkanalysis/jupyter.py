@@ -139,21 +139,23 @@ plotter.plot_scatter_plot() """
         cell_list.append(self._generate_custom_code_cell(plot_scatter_code))
 
         stats_markdown = """
-### Error analysis on typical statistical measures: R, MUE and Kendall tau
-Below are examples of how to resample from the data in order to obtain errorbars on Correlation coefficients, 
-mean unsigned errors and Kendall tau. Returned are confidence interavals of 1 sigma. However standard deviations can also 
-be returned. """
+### Error analysis on typical statistical measures: R_mean, MUE and Kendall tau_mean
+Below are examples of how to re-sample from the data in order to obtain error bars on correlation coefficients, 
+mean unsigned errors and Kendall tau. Returned are confidence intervals of 65% and the median of the distribution.
+ However, standard deviations and mean can also 
+be returned, though less likely to give good information as these distributions are often heavily skewed and not 
+normally distributed. """
         cell_list.append(self._generate_custom_markdown_cell(stats_markdown))
 
         stats_code = """\
 stats = n_stats.freeEnergyStats()
 stats.generate_statistics(computed_relative_DDGs,experimental_DDGs,repeats=10000)
-r_error = stats.R_error
-tau_error = stats.tau_error
-mue_error = stats.mue_error
-print ("R is: %.2f < %.2f < %.2f" %(r_error[0], stats.R, r_error[1]))
-print ("Mue is: %.2f < %.2f < %.2f" %(mue_error[0], stats.mue, mue_error[1]))
-print ("tau is: %.2f < %.2f < %.2f" %(tau_error[0], stats.tau, tau_error[1]))"""
+r_confidence = stats.R_confidence
+tau_confidence = stats.tau_confidence
+mue_confidence = stats.mue_confidence
+print ("R confidence is: %.2f < %.2f < %.2f" %(r_confidence[1], r_confidence[0], r_confidence[2]))
+print ("Mue confidence is: %.2f < %.2f < %.2f" %(mue_confidence[1], mue_confidence[0], mue_confidence[2]))
+print ("tau confidence is: %.2f < %.2f < %.2f" %(tau_confidence[1], tau_confidence[0], tau_confidence[2]))"""
         cell_list.append(self._generate_custom_code_cell(stats_code))
         nb['cells'] = cell_list
         return nb
