@@ -54,3 +54,8 @@ Internal Alpha version
 - added automated generation of jupyter notebooks
 - added support for k_d experimetnal input
 - improved documentation
+
+1.0.1
+-----
+- bugfix of confidence interavals for statistics computations. 
+- API change from stats.Observable_error to stats.Observable_confidence
