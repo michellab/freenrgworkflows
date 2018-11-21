@@ -30,6 +30,7 @@ import scipy.stats
 import copy
 import warnings
 
+
 class freeEnergyStats(object):
     """docstring for freeEnergyStats"""
     def __init__(self):
@@ -64,7 +65,7 @@ class freeEnergyStats(object):
         """
         if compound_list == None:
             cl_exp = set().union(*(d.keys() for d in exp_data))
-            cl_comp= set().union(*(d.keys() for d in comp_data))
+            cl_comp = set().union(*(d.keys() for d in comp_data))
             compound_list = list(set(cl_exp).intersection(cl_comp))
             if 'error' in compound_list:
                 index = compound_list.index('error')
@@ -75,7 +76,6 @@ class freeEnergyStats(object):
 
         self.data_comp = []
         self.data_exp = []
-        err_comp = []
         self._R = []
         self._R2 = []
         self._tau = []
@@ -107,7 +107,7 @@ class freeEnergyStats(object):
             self._mue.append(mue)
 
     def _calculate_predictive_index(self, series1, series2):
-        '''r This fucntion needs to be implemented properly'''
+        '''r This function needs to be implemented properly'''
         raise NotImplementedError('Calculating predictive index not impletmented yet.')
         '''sumwijcij = 0.0
         sumwij = 0.0
@@ -140,7 +140,7 @@ class freeEnergyStats(object):
         '''
 
     def _calculate_r2 (self, series1, series2):
-        r_value,p = scipy.stats.pearsonr(series1,series2)
+        r_value, p = scipy.stats.pearsonr(series1,series2)
 
         return r_value**2, r_value
 
@@ -151,11 +151,11 @@ class freeEnergyStats(object):
     def _calculate_mue(self, series1, series2 ):
 
         sumdev = 0.0
-        for x in range(0,len(series1)):
+        for x in range(0, len(series1)):
             sumdev += abs(series1[x] - series2[x])
         sumdev /= len(series1)
 
-        #print sumdev
+        # print sumdev
         return sumdev
 
     def _confidence(self,data):
@@ -170,12 +170,12 @@ class freeEnergyStats(object):
 
     @confidence_interval.setter
     def confidence_interval(self, confidence_interval):
-        if confidence_interval <0 or confidence_interval>1:
+        if confidence_interval < 0 or confidence_interval>1:
             warnings.warn(UserWarning('Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence'))
         self._confidence_interval = confidence_interval
 
     @property
-    def R(self):
+    def R_mean(self):
         return np.mean(self._R)
 
     @property
@@ -183,12 +183,19 @@ class freeEnergyStats(object):
         return np.std(self._R)
 
     @property
-    def R_error(self):
-        self._R_error =  self._confidence(self._R)
+    def R_confidence(self):
+        """
+        Returns:
+        -------
+        confidence : np.array
+            [median, lower_bound, upper_bound]
+        """
+        self._R_error = self._confidence(self._R)
+        self._R_error = np.concatenate([[np.median(self._R)], self._R_error])
         return self._R_error
 
     @property
-    def R2(self):
+    def R2_mean(self):
         return np.mean(self._R2)
 
     @property
@@ -196,12 +203,19 @@ class freeEnergyStats(object):
         return np.std(self._R2)
 
     @property
-    def R2_error(self):
-        self._R2_error =  self._confidence(self._R2)
+    def R2_confidence(self):
+        """
+        Returns:
+        -------
+        confidence : np.array
+            [median, lower_bound, upper_bound]
+        """
+        self._R2_error = self._confidence(self._R2)
+        self._R2_error = np.concatenate([[np.median(self._R2)], self._R2_error])
         return self._R2_error
 
     @property
-    def tau(self):
+    def tau_mean(self):
         return np.mean(self._tau)
 
     @property
@@ -209,12 +223,19 @@ class freeEnergyStats(object):
         return np.std(self._tau)
 
     @property
-    def tau_error(self):
-        self._tau_error =  self._confidence(self._tau)
+    def tau_confidence(self):
+        """
+        Returns:
+        -------
+        confidence : np.array
+            [median, lower_bound, upper_bound]
+        """
+        self._tau_error = self._confidence(self._tau)
+        self._tau_error = np.concatenate([[np.median(self._tau)], self._tau_error])
         return self._tau_error
 
     @property
-    def mue(self):
+    def mue_mean(self):
         return np.mean(self._mue)
 
     @property
@@ -222,8 +243,15 @@ class freeEnergyStats(object):
         return np.std(self._mue)
 
     @property
-    def mue_error(self):
-        self._mue_error =  self._confidence(self._mue)
+    def mue_confidence(self):
+        """
+        Returns:
+        -------
+        confidence : np.array
+            [median, lower_bound, upper_bound]
+        """
+        self._mue_error = self._confidence(self._mue)
+        self._mue_error = np.concatenate([[np.median(self._mue)], self._mue_error])
         return self._mue_error
 
 

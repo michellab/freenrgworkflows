@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 # This file is part of freenrgworkflows.
 #
@@ -23,7 +23,6 @@
 __author__ = "Antonia Mey"
 __email__ = "antonia.mey@ed.ac.uk"
 
-
 ####################################################################################################
 #
 #   IMPORTS
@@ -38,7 +37,6 @@ import networkanalysis
 from argparse import ArgumentParser, FileType
 import numpy as np
 import os
-
 
 ####################################################################################################
 #
@@ -62,64 +60,64 @@ if '__main__' == __name__:
         metavar='FILE'
     )
     parser.add_argument(
-             '-o',
-             '--network_output',
-             help='File to write final free energies differences to',
-             metavar='FILE',
-             default = None
+        '-o',
+        '--network_output',
+        help='File to write final free energies differences to',
+        metavar='FILE',
+        default=None
     )
     parser.add_argument(
-             '-e',
-             '--experiments',
-             help='File containing experimental IC50 data',
-             default = None,
-             metavar='FILE'
+        '-e',
+        '--experiments',
+        help='File containing experimental IC50 data',
+        default=None,
+        metavar='FILE'
     )
     parser.add_argument(
-             "--target_compound",
-             help="Name of the reference compound with respect to which the free energy should be computed",
-             metavar='STRING'
+        "--target_compound",
+        help="Name of the reference compound with respect to which the free energy should be computed",
+        metavar='STRING'
     )
     parser.add_argument(
-             "--intermed_ID",
-             help="String identifier for intermediates, e.g. INT_01 which should not be retained in the final output",
-             metavar='STRING'
+        "--intermed_ID",
+        help="String identifier for intermediates, e.g. INT_01 which should not be retained in the final output",
+        metavar='STRING'
     )
     parser.add_argument(
-            "--stats",
-            help="Print correclation statistics between computated and experimental data, "
-            "this will only work if and experimental data file was given",
-            action='store_true'
+        "--stats",
+        help="Print correclation statistics between computated and experimental data, "
+             "this will only work if and experimental data file was given",
+        action='store_true'
     )
     parser.add_argument(
-            "--comments",
-            help="Identifier used to mark comments in the input network files",
-            metavar='STRING',
-            default='#'
+        "--comments",
+        help="Identifier used to mark comments in the input network files",
+        metavar='STRING',
+        default='#'
     )
     parser.add_argument(
-            "--delimiter",
-            help="delimiter used in the input network files",
-            metavar='STRING',
-            default=','
+        "--delimiter",
+        help="delimiter used in the input network files",
+        metavar='STRING',
+        default=','
     )
     parser.add_argument(
-            "--merge_BM",
-            help="Merge binding modes, assuming they are identified as compoun_BM1 and compound_BM2",
-            metavar='BOOLEAN',
-            default='True'
+        "--merge_BM",
+        help="Merge binding modes, assuming they are identified as compoun_BM1 and compound_BM2",
+        metavar='BOOLEAN',
+        default='True'
     )
     parser.add_argument(
-            "--weighted",
-            help="Compute weithed path averages when true and unweighted path averages when false",
-            metavar='BOOLEAN',
-            default='True'
+        "--weighted",
+        help="Compute weithed path averages when true and unweighted path averages when false",
+        metavar='BOOLEAN',
+        default='True'
     )
     parser.add_argument(
-            "--generate_notebook",
-            help="Autogenerates a jupyter notebook showing the working of the anaysis and useful plots. "
-            "The filename is the arguemtn of -o with a .ipynb extension.",
-            action='store_true'
+        "--generate_notebook",
+        help="Autogenerates a jupyter notebook showing the working of the anaysis and useful plots. "
+             "The filename is the arguemtn of -o with a .ipynb extension.",
+        action='store_true'
     )
 
     args = parser.parse_args()
@@ -130,86 +128,83 @@ if '__main__' == __name__:
     #
     ############################################################################
     if 1 > len(args.files):
-        raise OSError ('You must give at least one networkanalysis networkx compatible file')
-
-
+        raise OSError('You must give at least one networkanalysis networkx compatible file')
 
     ############################################################################
     #
     #   write header
     #
     ############################################################################
-    print ("\n\n################# NETWORKANALYSIS v. %s WITH NETWORKX ################################" %networkanalysis.__version__)
+    print (
+                "\n\n################# NETWORKANALYSIS v. %s WITH NETWORKX ################################" % networkanalysis.__version__)
     print ("\n\n########################## Parameters ######################################")
-    print ("filelist: \t\t\t\t%s" %args.files)
-    print ("file comment: \t\t\t\t%s" %args.comments)
-    print ("file delimiter: \t\t\t%s" %args.delimiter)
-    print ("target compound: \t\t\t%s" %args.target_compound)
-    print ("intermed_ID: \t\t\t\t%s" %args.intermed_ID)
-    print ("Network computed free energies file: \t%s" %args.network_output)
-    print ("IC50s datafile: \t\t\t%s" %args.experiments)
-    print ("Weidghted averages:\t\t\t%s" %args.weighted)
-    print ("Merge binding modes:\t\t\t%s" %args.merge_BM)
+    print ("filelist: \t\t\t\t%s" % args.files)
+    print ("file comment: \t\t\t\t%s" % args.comments)
+    print ("file delimiter: \t\t\t%s" % args.delimiter)
+    print ("target compound: \t\t\t%s" % args.target_compound)
+    print ("intermed_ID: \t\t\t\t%s" % args.intermed_ID)
+    print ("Network computed free energies file: \t%s" % args.network_output)
+    print ("IC50s datafile: \t\t\t%s" % args.experiments)
+    print ("Weidghted averages:\t\t\t%s" % args.weighted)
+    print ("Merge binding modes:\t\t\t%s" % args.merge_BM)
     print ("#############################################################################\n\n")
 
-
-    #Do the network analysis
+    # Do the network analysis
     pG = PerturbationGraph()
-    pG.populate_pert_graph(args.files[0], delimiter = args.delimiter, comments = args.comments)
+    pG.populate_pert_graph(args.files[0], delimiter=args.delimiter, comments=args.comments)
     if len(args.files) > 1:
         for f in args.files[1:]:
-            pG.add_data_to_graph(f, delimiter = args.delimiter, comments = args.comments)
+            pG.add_data_to_graph(f, delimiter=args.delimiter, comments=args.comments)
     target_compound = args.target_compound
     if target_compound == None:
-        target_compound = list(pG.graph.nodes)[0]  
-        warnings.warn(UserWarning("No target compound given, using the first compound in the node list: %s" %target_compound))
+        target_compound = list(pG.graph.nodes)[0]
+        warnings.warn(
+            UserWarning("No target compound given, using the first compound in the node list: %s" % target_compound))
     if args.weighted == False:
         pG.compute_avg_paths(target_compound)
     else:
         pG.compute_weighted_avg_paths(target_compound)
-    pG.format_free_energies(merge_BM=args.merge_BM, intermed_ID=args.intermed_ID, weighted = args.weighted)
+    pG.format_free_energies(merge_BM=args.merge_BM, intermed_ID=args.intermed_ID, weighted=args.weighted)
     comp_DDG = pG.freeEnergyInKcal
 
     if args.network_output != None:
         pG.write_free_energies(comp_DDG, filename=args.network_output)
-    else: 
+    else:
         pG.write_free_energies(comp_DDG)
 
-    #Read experimental data
+    # Read experimental data
     if args.experiments != None and args.stats:
         ex = ExperimentalData()
-        ex.compute_DDG_from_IC50s(args.experiments,reference=target_compound)
+        ex.compute_DDG_from_IC50s(args.experiments, reference=target_compound)
         exp_DDG = ex.freeEnergiesInKcal
         stats = freeEnergyStats()
-        stats.generate_statistics(comp_DDG,exp_DDG,repeats=1000)
+        stats.generate_statistics(comp_DDG, exp_DDG, repeats=1000)
 
-        print ("\n########################## Statistics ######################################")
-        print (" R and std = %f ± %f" %(stats.R, stats.R_std))
-        print (" R2 and std = %f ± %f" %(stats.R2, stats.R2_std))
-        print (" tau and std = %f ± %f" %(stats.tau, stats.tau_std))
-        print (" MUE and std = %f ± %f" %(stats.mue, stats.mue_std))
-        print ("#############################################################################\n\n")
+        print("\n########################## Statistics ######################################")
+        print(" R and std = %f ± %f" % (stats.R_mean, stats.R_std))
+        print(" R2 and std = %f ± %f" % (stats.R2_mean, stats.R2_std))
+        print(" tau and std = %f ± %f" % (stats.tau_mean, stats.tau_std))
+        print(" MUE and std = %f ± %f" % (stats.mue_mean, stats.mue_std))
+        print("#############################################################################\n\n")
 
     if args.generate_notebook:
         if args.network_output != None:
-            nbname = os.path.splitext(args.network_output)[0]+'.ipynb'
+            nbname = os.path.splitext(args.network_output)[0] + '.ipynb'
             print(nbname)
         else:
             nbname = "Default_Analysis.ipynb"
-        print ("\n###########################Generating jupyter notebook#######################")
+        print("\n###########################Generating jupyter notebook#######################")
         book = JupyterNotebookCreator(nbname, networkfile=args.files[0], experimentalfile=args.experiments)
         book.write_notebook()
-        print("#                       Notebook written to %s" %nbname)
-        print ("##############################################################################\n\n")
-
+        print("#                       Notebook written to %s" % nbname)
+        print("##############################################################################\n\n")
 
     ############################################################################
     #
     #   say good bye
     #
     ############################################################################
-    print ("\n#################################################################################################\n#")
-    print ("#                 That's it, now it's time to put the kettle on ")
-    print ("#                Thank you for using the network analysis package!")
-    print ("#\n################################################################################################\n\n")
-
+    print("\n#################################################################################################\n#")
+    print("#                 That's it, now it's time to put the kettle on ")
+    print("#                Thank you for using the network analysis package!")
+    print("#\n################################################################################################\n\n")
