@@ -73,7 +73,7 @@ class PerturbationGraph(object):
         r"""alternative way of populating graph
 
         """
-        graph = nx.diGraph()
+        g = nx.DiGraph()
         # add bit to check you can read file
         f = open(filename, 'r')
         data = f.readlines()
@@ -99,7 +99,7 @@ class PerturbationGraph(object):
                     print((w_list))
                     g.edges[e[0],e[1]]['weight'] = np.mean(w_list)
                     g.edges[e[0],e[1]]['error'] = np.std(w_list)
-        self._graph = self._symmetrize_graph(graph)
+        self._graph = self._symmetrize_graph(g)
         self._compoundList = np.sort(self._graph.nodes())
 
     def add_data_to_graph(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight', float),('error',float))):
