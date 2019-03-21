@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 # This file is part of freenrgworkflows.
 #
@@ -23,7 +23,6 @@
 __author__ = "Antonia Mey"
 __email__ = "antonia.mey@ed.ac.uk"
 
-
 import numpy as np
 import networkx as nx
 import scipy.stats
@@ -33,19 +32,20 @@ import sys
 
 class ExperimentalData(object):
     """docstring for ExperimentalData"""
-    def __init__(self, temperature = 300.0):
+
+    def __init__(self, temperature=300.0):
         self._DG_in_kcal = None
         self._DG_in_kJ = None
         self._ic50s = None
         self._kD = None
         self._referenceCompound = None
-        self._kTkcal = 0.0019872041*temperature
-        self._kTkJ = 0.0083144621*temperature
-        self._RTkJ = 8.314459848*temperature
-        self._RTkcal = 1.987203611*temperature
+        self._kTkcal = 0.0019872041 * temperature
+        self._kTkJ = 0.0083144621 * temperature
+        self._RTkJ = 8.314459848 * temperature
+        self._RTkcal = 1.987203611 * temperature
         self._keys = None
 
-    def compute_DDG_from_IC50s(self, filename, reference = None, smiles_string=False):
+    def compute_DDG_from_IC50s(self, filename, reference=None, smiles_string=False):
         r"""
         filename : string
             file containing ic50 data, format - compound name, ic50 value, error
@@ -59,11 +59,11 @@ class ExperimentalData(object):
             curr_ic50 = {}
             fields = line.split(',')
             curr_ic50[fields[0]] = float(fields[1].strip())
-            if smiles_string and len(fields) >2:
+            if smiles_string and len(fields) > 2:
                 curr_ic50['smiles'] = fields[2].strip()
-            #note down the keys
+            # note down the keys
             self._keys.append(fields[0])
-            self._ic50s.append(curr_ic50) #append to list of ic50 compounds. 
+            self._ic50s.append(curr_ic50)  # append to list of ic50 compounds.
         f.close()
 
         reference_index = 0
@@ -77,14 +77,14 @@ class ExperimentalData(object):
         for k in range(len(self._keys)):
             key = self._keys[k]
             ic50 = self._ic50s[k][key]
-            r = float(ic50/float(self._ic50s[reference_index][self._referenceCompound]))
+            r = float(ic50 / float(self._ic50s[reference_index][self._referenceCompound]))
             a_kcal = {}
-            a_kcal[key] = self._kTkcal*np.log(r)
-            a_kcal['error'] = self._kTkcal*np.log(2)
+            a_kcal[key] = self._kTkcal * np.log(r)
+            a_kcal['error'] = self._kTkcal * np.log(2)
             self._DG_in_kcal.append(a_kcal)
             a_kJ = {}
-            a_kJ[key] = self._kTkJ*np.log(r)
-            a_kJ['error'] = self._kTkJ*np.log(2)
+            a_kJ[key] = self._kTkJ * np.log(r)
+            a_kJ['error'] = self._kTkJ * np.log(2)
             self._DG_in_kJ.append(a_kJ)
 
     def compute_DDG_from_kD(self, filename, reference=None, delimiter=','):
@@ -106,9 +106,9 @@ class ExperimentalData(object):
                 fields = line.strip().split(delimiter)
                 curr_kD = {}
                 curr_kD[fields[0]] = float(fields[1])
-                #note down the keys
+                # note down the keys
                 self._keys.append(fields[0])
-                self._kD.append(curr_kD) #append to list of ic50 compounds. 
+                self._kD.append(curr_kD)  # append to list of ic50 compounds.
 
         if reference is not None:
             self._referenceCompound = reference
@@ -117,25 +117,22 @@ class ExperimentalData(object):
             self._referenceCompound = self._keys[0]
             reference_index = 0
 
-
         for k in range(len(self._keys)):
             key = self._keys[k]
             kD = self._kD[k][key]
-            r = float(kD/float(self._kD[reference_index][self._referenceCompound]))
+            r = float(kD / float(self._kD[reference_index][self._referenceCompound]))
             a_kcal = {}
-            a_kcal[key] = self._RTkcal*np.log(r)
-            a_kcal['error'] = self._RTkcal*np.log(2)
+            a_kcal[key] = self._RTkcal * np.log(r)
+            a_kcal['error'] = self._RTkcal * np.log(2)
 
-            #computation for KJ/mol
+            # computation for KJ/mol
             self._DG_in_kcal.append(a_kcal)
             a_kJ = {}
-            a_kJ[key] = self._RTkJ*np.log(r)
-            a_kJ['error'] = self._RTkJ*np.log(2)
+            a_kJ[key] = self._RTkJ * np.log(r)
+            a_kJ['error'] = self._RTkJ * np.log(2)
             self._DG_in_kJ.append(a_kJ)
 
-
-
-    def read_free_energies(self,filename, kcal=True, comment='#'):
+    def read_free_energies(self, filename, kcal=True, comment='#'):
         r"""Read free energies from a file
         filename : string
             Filename containing free energies        
@@ -146,7 +143,7 @@ class ExperimentalData(object):
         self._DG_in_kcal = []
         self._DG_in_kJ = []
         if not kcal:
-            raise(NotImplementedError('This has not been implemented yet'))
+            raise (NotImplementedError('This has not been implemented yet'))
         else:
             f = open(filename, 'r')
             for line in f.readlines():
@@ -159,11 +156,10 @@ class ExperimentalData(object):
                 F_kcal = {}
                 F_kcal[fields[0]] = float(fields[1])
                 F_kcal['error'] = float(fields[2].strip())
-                #note down the keys
+                # note down the keys
                 self._keys.append(fields[0])
-                self._DG_in_kcal.append(F_kcal) #append to list of ic50 compounds. 
+                self._DG_in_kcal.append(F_kcal)  # append to list of ic50 compounds.
             f.close()
-
 
     @property
     def ic50s(self):
@@ -184,4 +180,3 @@ class ExperimentalData(object):
     @property
     def compoundList(self):
         return self._keys
-

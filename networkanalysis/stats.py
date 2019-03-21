@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 # This file is part of freenrgworkflows.
 #
@@ -33,6 +33,7 @@ import warnings
 
 class freeEnergyStats(object):
     """docstring for freeEnergyStats"""
+
     def __init__(self):
         self._PI = None
         self._R = None
@@ -49,7 +50,7 @@ class freeEnergyStats(object):
         self.data_exp = None
         self._confidence_interval = 0.68
 
-    def generate_statistics(self, comp_data, exp_data, compound_list = None, repeats = 1000):
+    def generate_statistics(self, comp_data, exp_data, compound_list=None, repeats=1000):
         r"""
         Parameters
         ----------
@@ -85,7 +86,7 @@ class freeEnergyStats(object):
             exp = next(item for item in exp_data if k in item)
             val = comp[k]
             err = comp['error']
-            self.data_comp.append([val,err])
+            self.data_comp.append([val, err])
             val = exp[k]
             self.data_exp.append(val)
         for i in range(repeats):
@@ -139,16 +140,16 @@ class freeEnergyStats(object):
         return PI
         '''
 
-    def _calculate_r2 (self, series1, series2):
-        r_value, p = scipy.stats.pearsonr(series1,series2)
+    def _calculate_r2(self, series1, series2):
+        r_value, p = scipy.stats.pearsonr(series1, series2)
 
-        return r_value**2, r_value
+        return r_value ** 2, r_value
 
     def _calculate_tau(self, series1, series2):
         tau = scipy.stats.kendalltau(series1, series2)
         return tau[0]
 
-    def _calculate_mue(self, series1, series2 ):
+    def _calculate_mue(self, series1, series2):
 
         sumdev = 0.0
         for x in range(0, len(series1)):
@@ -158,11 +159,11 @@ class freeEnergyStats(object):
         # print sumdev
         return sumdev
 
-    def _confidence(self,data):
+    def _confidence(self, data):
         sorted_data = np.sort(data)
-        lower = int(np.floor((1-self.confidence_interval)*len(sorted_data)))
-        upper = int(np.ceil(self.confidence_interval*len(sorted_data)))
-        return[sorted_data[lower], sorted_data[upper]]
+        lower = int(np.floor((1 - self.confidence_interval) * len(sorted_data)))
+        upper = int(np.ceil(self.confidence_interval * len(sorted_data)))
+        return [sorted_data[lower], sorted_data[upper]]
 
     @property
     def confidence_interval(self):
@@ -170,8 +171,9 @@ class freeEnergyStats(object):
 
     @confidence_interval.setter
     def confidence_interval(self, confidence_interval):
-        if confidence_interval < 0 or confidence_interval>1:
-            warnings.warn(UserWarning('Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence'))
+        if confidence_interval < 0 or confidence_interval > 1:
+            warnings.warn(UserWarning(
+                'Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence'))
         self._confidence_interval = confidence_interval
 
     @property
@@ -253,5 +255,3 @@ class freeEnergyStats(object):
         self._mue_error = self._confidence(self._mue)
         self._mue_error = np.concatenate([[np.median(self._mue)], self._mue_error])
         return self._mue_error
-
-

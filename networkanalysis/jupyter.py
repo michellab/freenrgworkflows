@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 # This file is part of freenrgworkflows.
 #
@@ -41,7 +41,7 @@ class JupyterNotebookCreator(object):
         self._notebook_name = nbname
         if networkfile is None:
             self._networkfile = ['tests/io/ic50_exp.dat']
-        else: 
+        else:
             self._networkfile = networkfile
         if experimentalfile is None:
             self._experimentalfile = 'tests/io/ic50_exp.dat'
@@ -50,7 +50,7 @@ class JupyterNotebookCreator(object):
         self._custom_heading = custom_heading
         pass
 
-    def _generate_heading(self, custom_heading = None):
+    def _generate_heading(self, custom_heading=None):
         if not custom_heading:
             heading = """\
 # Default Perturbation network analysis notebook
@@ -61,7 +61,7 @@ Email: antonia.mey@ed.ac.uk"""
             heading = custom_heading
         return nbf.v4.new_markdown_cell(heading)
 
-    def _generate_imports(self, custom_imports = None):
+    def _generate_imports(self, custom_imports=None):
         if not custom_imports:
             imports = """\
 %pylab inline
@@ -75,7 +75,7 @@ networkanalysis.__version__"""
             imports = custom_imports
         return nbf.v4.new_code_cell(imports)
 
-    def _generate_custom_code_cell(self, code = """\ #This is code"""):
+    def _generate_custom_code_cell(self, code="""\ #This is code"""):
         return nbf.v4.new_code_cell(code)
 
     def _generate_custom_markdown_cell(self, markdown="""\ I am markdown """):
@@ -100,7 +100,7 @@ pG.format_free_energies(merge_BM=True,intermed_ID='INT')
 computed_relative_DDGs = pG.freeEnergyInKcal
 print ("Free energies computed from the perturbation network are: ")
 print ("---------------------------------------- ")
-pG.write_free_energies(computed_relative_DDGs)""" %self._networkfile
+pG.write_free_energies(computed_relative_DDGs)""" % self._networkfile
 
         cell_list.append(self._generate_custom_code_cell(pG))
         exp_markdown = """
@@ -110,7 +110,6 @@ The cells below will read in your experimental data. Just replace the path to yo
 `IC_50_file` variable """
         cell_list.append(self._generate_custom_markdown_cell(exp_markdown))
 
-
         exp_code = """\
 experiments = n_ex.ExperimentalData()
 IC_50_file = '%s'
@@ -118,21 +117,18 @@ experiments.compute_DDG_from_IC50s(IC_50_file, reference=target_compound)
 experimental_DDGs = experiments.freeEnergiesInKcal
 print ("Free energies computed from IC50 data: ")
 print ("---------------------------------------- ")
-pG.write_free_energies(experimental_DDGs)""" %self._experimentalfile
+pG.write_free_energies(experimental_DDGs)""" % self._experimentalfile
         cell_list.append(self._generate_custom_code_cell(exp_code))
-
 
         plots_markdown = """
 ### Typical plots
 Below a bar plot and scatter plot template for comparing experimental and computed free energy values"""
         cell_list.append(self._generate_custom_markdown_cell(plots_markdown))
 
-
         plot_bar_code = """\
 plotter = n_plot.FreeEnergyPlotter(experimental_DDGs, computed_relative_DDGs)
 ax,fig = plotter.plot_bar_plot(legend=('experimental', 'computed'))"""
         cell_list.append(self._generate_custom_code_cell(plot_bar_code))
-
 
         plot_scatter_code = """\
 plotter.plot_scatter_plot() """
