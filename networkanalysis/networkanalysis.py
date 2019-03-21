@@ -69,6 +69,38 @@ class PerturbationGraph(object):
         else:
             warnings.warn(UserWarning("Warning...........Use the method add_data_to_graph, to add further data to an existing graph"))
             return 1
+    def populate_graph(self, filename, delimiter=',', comments='#'):
+        r"""alternative way of populating graph
+
+        """
+        g = nx.DiGraph()
+        # add bit to check you can read file
+        f = open(filename, 'r')
+        data = f.readlines()
+        f.close()
+
+        # now populate the graph
+
+        for d in data:
+            l = d.strip().split(delimiter)
+            if g.has_edge(l[0],l[1]):
+                print('Must do something with edge: %s,%s' %(l[0],l[1]))
+                a = g.get_edge_data(l[0],l[1])
+                a['weight_list'].append(float(l[2]))
+                g.edges[l[0], l[1]]['weight_list'] = a['weight_list']
+            else:
+                g.add_edge(l[0],l[1],weight=float(l[2]), error=float(l[3]), weight_list = [float(l[2])])
+        for e in g.edges:
+            e_data = g.get_edge_data(e[0],e[1])
+            if 'weight_list' in e_data:
+                w_list = e_data['weight_list']
+                if len(w_list)>1:
+                    print(e[0],e[1])
+                    print((w_list))
+                    g.edges[e[0],e[1]]['weight'] = np.mean(w_list)
+                    g.edges[e[0],e[1]]['error'] = np.std(w_list)
+        self._graph = self._symmetrize_graph(g)
+        self._compoundList = np.sort(self._graph.nodes())
 
     def add_data_to_graph(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight', float),('error',float))):
         r"""
@@ -156,10 +188,10 @@ class PerturbationGraph(object):
             format string for the free energies, e.g. '%s, %f, %f\n'
             Default = None
         merge_BM : boolean
-            true or false for binding modes using identifieds xxx_BMyyy, where xxx is the molecule name and yyy is the number of the binding mode
+            true or false for binding modes using identified xxx_BMyyy, where xxx is the molecule name and yyy is the number of the binding mode
             Default = False
         kT : float
-            simulation temperature times boltzman constant in [kcal/mol]
+            simulation temperature times Boltzmann constant in [kcal/mol]
             Default = 0.594
         intermed_ID : string
             string identifier of intermediate simulated compounds, e.g 'INT'
@@ -167,14 +199,14 @@ class PerturbationGraph(object):
         compound_order : list
             list of compounds
         weighted : boolean
-            use weithed or none error weighted paths
+            use weighted or none error weighted paths
         """
         if self._free_energies:
             self._free_energies = []
         mols = {}
         if weighted:
             if not self._weightedPathAverages and path_dictionary==None:
-                print('compute weithed path averages for network first in order to format free energies')
+                print('compute weighted path averages for network first in order to format free energies')
                 sys.exit(1)
             elif path_dictionary:
                 freeEnergies = path_dictionary
@@ -409,7 +441,3 @@ class PerturbationGraph(object):
     @property
     def compoundList(self):
         return self._compoundList
-
-
-
-
