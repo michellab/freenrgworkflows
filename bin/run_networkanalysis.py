@@ -37,6 +37,7 @@ import networkanalysis
 from argparse import ArgumentParser, FileType
 import numpy as np
 import os
+import warnings
 
 ####################################################################################################
 #
@@ -181,23 +182,30 @@ if '__main__' == __name__:
         stats.generate_statistics(comp_DDG, exp_DDG, repeats=1000)
 
         print("\n########################## Statistics ######################################")
-        print(" R and std = %f ± %f" % (stats.R_mean, stats.R_std))
-        print(" R2 and std = %f ± %f" % (stats.R2_mean, stats.R2_std))
-        print(" tau and std = %f ± %f" % (stats.tau_mean, stats.tau_std))
-        print(" MUE and std = %f ± %f" % (stats.mue_mean, stats.mue_std))
+        print(" R and std = %f +/- %f" % (stats.R_mean, stats.R_std))
+        print(" R2 and std = %f +/- %f" % (stats.R2_mean, stats.R2_std))
+        print(" tau and std = %f +/- %f" % (stats.tau_mean, stats.tau_std))
+        print(" MUE and std = %f +/- %f" % (stats.mue_mean, stats.mue_std))
         print("#############################################################################\n\n")
 
     if args.generate_notebook:
-        if args.network_output != None:
-            nbname = os.path.splitext(args.network_output)[0] + '.ipynb'
-            print(nbname)
+        try:
+            JupyterNotebookCreator
+        except NameError:
+            warnings.warn(UserWarning("The Jupyter notebook module is not available, "
+                "so generating a notebook is not possible"))
+            args.generate_notebook = False
         else:
-            nbname = "Default_Analysis.ipynb"
-        print("\n###########################Generating jupyter notebook#######################")
-        book = JupyterNotebookCreator(nbname, networkfile=args.files[0], experimentalfile=args.experiments)
-        book.write_notebook()
-        print("#                       Notebook written to %s" % nbname)
-        print("##############################################################################\n\n")
+            if args.network_output != None:
+                nbname = os.path.splitext(args.network_output)[0] + '.ipynb'
+                print(nbname)
+            else:
+                nbname = "Default_Analysis.ipynb"
+            print("\n###########################Generating jupyter notebook#######################")
+            book = JupyterNotebookCreator(nbname, networkfile=args.files[0], experimentalfile=args.experiments)
+            book.write_notebook()
+            print("#                       Notebook written to %s" % nbname)
+            print("##############################################################################\n\n")
 
     ############################################################################
     #
