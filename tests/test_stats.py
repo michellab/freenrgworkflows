@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 import warnings
 from networkanalysis.stats import *
+from networkanalysis.jupyter import *
 
 
 @pytest.fixture
@@ -15,8 +16,8 @@ def test_calculate_r2(stats):
     r2 = 0.2931274858030396
     r = 0.5414124913622141
     test_r2, test_r = stats._calculate_r2(a, b)
-    assert (test_r2 == r2)
-    assert (test_r == r)
+    assert (pytest.approx(test_r2) == r2)
+    assert (pytest.approx(test_r) == r)
 
 
 def test_calculate_tau(stats):
@@ -24,7 +25,7 @@ def test_calculate_tau(stats):
     b = np.array([5, 4, 6, 7, 8, 7, 7.8, 6])
     tau = 0.3461538461538462
     test_tau = stats._calculate_tau(a, b)
-    assert (test_tau == tau)
+    assert (pytest.approx(test_tau) == tau)
 
 
 def test_calculate_mue(stats):
@@ -32,7 +33,7 @@ def test_calculate_mue(stats):
     b = np.array([5, 4, 6, 7, 8, 7, 7.8, 6])
     mue = 1.5125000000000002
     test_mue = stats._calculate_mue(a, b)
-    assert (test_mue == mue)
+    assert (pytest.approx(test_mue) == mue)
 
 
 @pytest.mark.parametrize('boundaries', [(-72), (4)])
@@ -78,9 +79,9 @@ def test_statistics(stats):
     r = stats._calculate_r2(comp_array[:, 0], stats.data_exp)
     tau = stats._calculate_tau(comp_array[:, 0], stats.data_exp)
     mue = stats._calculate_mue(comp_array[:, 0], stats.data_exp)
-    assert (r == (1.0, 1.0))
-    assert (tau == 1.0)
-    assert (mue == 0.0)
+    assert (pytest.approx(r) == (1.0, 1.0))
+    assert (pytest.approx(tau) == 1.0)
+    assert (pytest.approx(mue) == 0.0)
 
 
 def test_calculate_predictive_index(stats):

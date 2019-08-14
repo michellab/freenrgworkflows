@@ -4,6 +4,8 @@ import os
 import sys
 from pathlib import Path
 import subprocess
+import warnings
+from networkanalysis.jupyter import *
 
 
 @pytest.fixture
@@ -76,6 +78,10 @@ def test_statistics(executable, graph_file):
 
 
 def test_jupyter_notebook(executable, graph_file):
+    try:
+        JupyterNotebookCreator
+    except NameError:
+        warnings.warn(UserWarning("The Jupyter notebook is not available, so test_jupyter_notebook will be skipped"))
     filename = os.path.join(os.getcwd(), 'tests', 'io', 'test_out.dat')
     nbfilename = os.path.join(os.getcwd(), 'tests', 'io', 'test_out.ipynb')
     print(nbfilename)

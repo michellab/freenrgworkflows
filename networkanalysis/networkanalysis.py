@@ -300,7 +300,7 @@ class PerturbationGraph(object):
                     f.write(fmt % (r_energy_k, r_energy_v, error))
             else:
                 if fmt == None:
-                    print('{:10s} {:5.3f} ± {:5.3f}'.format(r_energy_k, r_energy_v, error))
+                    print('{:10s} {:5.3f} +/- {:5.3f}'.format(r_energy_k, r_energy_v, error))
                 else:
                     print (fmt % (r_energy_k, r_energy_v, error))
         if filename != None:
@@ -405,9 +405,9 @@ class PerturbationGraph(object):
                 error = np.sqrt(error)
                 if len(c) <= max_length and not print_all:
                     if sum > closure_threshold:
-                        print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' % (c, sum, error))
+                        print ('DDG for cycle %s is %.2f +/- %.2f kcal/mol' % (c, sum, error))
                 if print_all:
-                    print ('DDG for cycle %s is %.2f ± %.2f kcal/mol' % (c, sum, error))
+                    print ('DDG for cycle %s is %.2f +/- %.2f kcal/mol' % (c, sum, error))
 
     def rename_compounds():
         warnings.warn(Not)('This function is not implemented yet')
