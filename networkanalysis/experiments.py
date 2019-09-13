@@ -92,9 +92,9 @@ class ExperimentalData(object):
         Parameters:
         ----------
         filename : string
-            The name of the file containting kD value in format compound_name,kD_value
+            The name of the file containing kD value in format compound_name,kD_value
         reference : string
-            Name of the recerence compound which will be used to compute DDGs for
+            Name of the reference compound which will be used to compute DDGs for
         """
         self._kD = []
         self._DG_in_kcal = []

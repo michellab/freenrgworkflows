@@ -59,7 +59,7 @@ class freeEnergyStats(object):
             list of dictionaries of computed free energies and their errors
         exp_data : list of dictionaries
             list of dictionaries of experimental free energies and their errors
-        comound_list : list of strings
+        compound_list : list of strings
             list should contain dictionary keys of compounds to be compared statistically
         repeats : integer
             number of times new samples are drawn from the gaussian distribution of the computational data
@@ -109,7 +109,7 @@ class freeEnergyStats(object):
 
     def _calculate_predictive_index(self, series1, series2):
         '''r This function needs to be implemented properly'''
-        raise NotImplementedError('Calculating predictive index not impletmented yet.')
+        raise NotImplementedError('Calculating predictive index not implemented yet.')
         '''sumwijcij = 0.0
         sumwij = 0.0
 

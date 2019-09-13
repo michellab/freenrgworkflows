@@ -98,7 +98,7 @@ if nbf:
     pG.populate_pert_graph('%s')
     # Uncomment below if you have run multiple runs for some perturbations and add file path
     #pG.add_data_to_graph('/path/to/additional/runs.csv')
-    target_compound = pG.compoundList[0] #change this to your target comound
+    target_compound = pG.compoundList[0] #change this to your target compound
     pG.compute_weighted_avg_paths(target_compound)
     pG.format_free_energies(merge_BM=True,intermed_ID='INT')
     computed_relative_DDGs = pG.freeEnergyInKcal

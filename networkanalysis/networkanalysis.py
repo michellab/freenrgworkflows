@@ -113,7 +113,7 @@ class PerturbationGraph(object):
         ----------
         filename : String
             filename of the forward and backward perturbation generated from simulation output
-            Filestructure should be:
+            File structure should be:
             node1,node2,DG,eDG,other_attributes
         delimiter : String
             delimiter for network file 
@@ -154,7 +154,7 @@ class PerturbationGraph(object):
         self._compoundList = self._graph.nodes()
 
     def _symmetrize_graph(self, graph):
-        r"""symmetrises the graph and computes backward and forward averages where  given. 
+        r"""symmetrizes the graph and computes backward and forward averages where  given.
         Parameters
         ----------
         graph : networkx graph
@@ -163,7 +163,8 @@ class PerturbationGraph(object):
         Returns
         -------
         graph : networkx graph
-            returns directed graph where, if not both a forward and backward edge are present a symmetrized reverse edge is included
+            returns directed graph where, if not both a forward and backward edge are present a symmetrized reverse edge
+             is included
         """
         symmetrizedGraph = nx.DiGraph()
         for u, v, w_forward in graph.edges(data=True):
@@ -307,7 +308,7 @@ class PerturbationGraph(object):
             f.close()
 
     def shift_free_energies(self, shift_value=0.0):
-        for d in self.freeEnergies:
+        for d in self._free_energies:
             for k, v in iter(d.items()):
                 if k != 'error':
                     d[k] = d[k] - shift_value
@@ -323,7 +324,7 @@ class PerturbationGraph(object):
         self._weighted_paths = False
         self._pathAverages = []
         for n in self._compoundList:
-            paths = nx.shortest_simple_paths(self._graph, target_node, n)
+            paths = list(nx.all_simple_paths(self._graph, target_node, n, cutoff=12))
             err_list = []
             sum_list = []
             for p in paths:
@@ -410,7 +411,7 @@ class PerturbationGraph(object):
                     print ('DDG for cycle %s is %.2f +/- %.2f kcal/mol' % (c, sum, error))
 
     def rename_compounds():
-        warnings.warn(Not)('This function is not implemented yet')
+        warnings.warn(NotImplementedError)('This function is not implemented yet')
         sys.exit(1)
 
     @property
