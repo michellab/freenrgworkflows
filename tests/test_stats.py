@@ -93,13 +93,6 @@ def test_statistics(stats):
     assert (pytest.approx(mue) == 0.0)
 
 
-def test_calculate_rmse(stats):
-    exp_dat = [{'a': 0.5, 'error': 0.02}, {'b': 1.7, 'error': 0.2}, {'f': -0.9, 'error': 0.06}]
-    comp = [{'a': 0.5, 'error': 0.02}, {'b': 1.7, 'error': 0.2}, {'f': -0.9, 'error': 0.06}]
-    error_string = 'Calculating RMSE error.'
-    stats.generate_statistics(comp, exp_dat, repeats=100)
-
-
 def test_properties(stats):
     exp_dat = [{'a': 0.5, 'error': 0.02}, {'b': 1.7, 'error': 0.2}, {'f': -0.9, 'error': 0.06}]
     comp = [{'a': 0.5, 'error': 0.02}, {'b': 1.7, 'error': 0.2}, {'f': -0.9, 'error': 0.06}]
