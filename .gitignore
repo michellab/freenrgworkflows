@@ -1,3 +1,7 @@
+*.dat
+*.out
+*.ipynb
+.idea
 *.pyc
 .DS_Store
 .ipynb_checkpoints/

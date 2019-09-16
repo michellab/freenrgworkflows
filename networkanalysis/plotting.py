@@ -144,8 +144,8 @@ class FreeEnergyPlotter(object):
         plt.xlim(np.min(self.dataseries1[:, 0]) - 1, np.max(self.dataseries1[:, 0]) + 1)
         plt.ylim(np.min(self.dataseries2[:, 0]) - 1, np.max(self.dataseries2[:, 0]) + 1)
         # add some text for labels, title and axes ticks
-        plt.ylabel(xlabel, fontsize=15)
-        plt.xlabel(ylabel, fontsize=15)
+        plt.ylabel(ylabel, fontsize=15)
+        plt.xlabel(xlabel, fontsize=15)
 
         sns.despine()
 

@@ -110,7 +110,7 @@ if '__main__' == __name__:
     )
     parser.add_argument(
         "--weighted",
-        help="Compute weithed path averages when true and unweighted path averages when false",
+        help="Compute weighted path averages when true and unweighted path averages when false",
         metavar='BOOLEAN',
         default='True'
     )
