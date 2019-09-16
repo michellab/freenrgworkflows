@@ -36,6 +36,14 @@ def test_calculate_mue(stats):
     assert (pytest.approx(test_mue) == mue)
 
 
+def test_calculate_rmse(stats):
+    a = np.array([2, 4, 5, 6, 4, 6, 8.9, 7])
+    b = np.array([5, 4, 6, 7, 8, 7, 7.8, 6])
+    rmse = 1.9432575742808775
+    test_mue = stats._calculate_rmse(a, b)
+    assert (pytest.approx(test_mue) == rmse)
+
+
 @pytest.mark.parametrize('boundaries', [(-72), (4)])
 def test_confidence_warnings(stats, boundaries):
     warn_string = 'Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence'
@@ -60,6 +68,7 @@ def test_repeats(stats, repeat):
     assert (len(stats._mue) == repeat)
     assert (len(stats._tau) == repeat)
     assert (len(stats._R2) == repeat)
+    assert (len(stats._rmse) == repeat)
 
 
 def test_array_conversion(stats):
@@ -84,12 +93,11 @@ def test_statistics(stats):
     assert (pytest.approx(mue) == 0.0)
 
 
-def test_calculate_predictive_index(stats):
+def test_calculate_rmse(stats):
     exp_dat = [{'a': 0.5, 'error': 0.02}, {'b': 1.7, 'error': 0.2}, {'f': -0.9, 'error': 0.06}]
     comp = [{'a': 0.5, 'error': 0.02}, {'b': 1.7, 'error': 0.2}, {'f': -0.9, 'error': 0.06}]
-    error_string = 'Calculating predictive index not impletmented yet.'
-    with pytest.raises(NotImplementedError, message=error_string):
-        stats._calculate_predictive_index(exp_dat, comp)
+    error_string = 'Calculating RMSE error.'
+    stats.generate_statistics(comp, exp_dat, repeats=100)
 
 
 def test_properties(stats):
@@ -100,6 +108,8 @@ def test_properties(stats):
     assert (np.mean(stats._R2) == stats.R2_mean)
     assert (np.mean(stats._tau) == stats.tau_mean)
     assert (np.mean(stats._mue) == stats.mue_mean)
+    R,p = scipy.stats.pearsonr(np.array(stats.data_comp)[:,0], np.array(stats.data_exp))
+    assert (R == stats.R)
 
 
 def test_property_errors(stats):
