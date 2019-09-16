@@ -59,3 +59,10 @@ Internal Alpha version
 -----
 - bugfix of confidence interavals for statistics computations. 
 - API change from stats.Observable_error to stats.Observable_confidence
+
+1.1.0
+-----
+- fixed typos
+- fixed wrong labelling of x and y axis
+- added support for RMSE
+- calcualtion of direct statistics on dataset rather than bootstrapping
