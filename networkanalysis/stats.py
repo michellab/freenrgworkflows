@@ -34,21 +34,71 @@ import warnings
 class freeEnergyStats(object):
     """docstring for freeEnergyStats"""
 
-    def __init__(self):
+    r"""
+    Parameters
+    ----------
+
+    prediction : list of dictionaries
+        list of dictionaries of computed free energies and their errors
+        Default = None
+    target : list of dictionaries
+        list of dictionaries of experimental free energies and their errors
+        Default = None
+    compound_list : list of strings
+        list should contain dictionary keys of compounds to be compared statistically
+        Default = None
+    verbose : boolean
+        Be loud and noisy!
+        Default = False
+    """
+    def __init__(self, prediction=None, target=None, compound_list=None, verbose=False):
+
+        self.data_comp = None
+        self.data_exp = None
+        self._compound_list = None
+        if prediction is not None:
+            if target is None:
+                raise ValueError("If you give a prediction you also need to give a target value")
+            else:
+                if compound_list is None:
+                    cl_exp = set().union(*(d.keys() for d in target))
+                    cl_comp = set().union(*(d.keys() for d in prediction))
+                    compound_list = list(set(cl_exp).intersection(cl_comp))
+                    if 'error' in compound_list:
+                        index = compound_list.index('error')
+                        compound_list.pop(index)
+                    self._compound_list = compound_list
+                else:
+                        self._compound_list = compound_list
+            for k in self._compound_list:
+                comp = next(item for item in prediction if k in item)
+                exp = next(item for item in target if k in item)
+                val = comp[k]
+                err = comp['error']
+                self.data_comp.append([val, err])
+                val = exp[k]
+                self.data_exp.append(val)
+            if verbose:
+                print("Setup stats...")
+
+        # Statistics from bootstrapping
         self._PI = None
         self._R = None
         self._R2 = None
         self._tau = None
         self._mue = None
+        self._rmse = None
+        self._rmse_error = None
         self._R_error = None
         self._R2_error = None
         self._tau_error = None
         self._mue_error = None
-        self._compound_list = None
-
-        self.data_comp = None
-        self.data_exp = None
         self._confidence_interval = 0.68
+
+        # Direct statistics from data
+        self._R_from_data = None
+        self._mue_from_data = None
+        self._rmse_from_data = None
 
     def generate_statistics(self, comp_data, exp_data, compound_list=None, repeats=1000):
         r"""
@@ -64,7 +114,11 @@ class freeEnergyStats(object):
         repeats : integer
             number of times new samples are drawn from the gaussian distribution of the computational data
         """
-        if compound_list == None:
+        self.data_comp = []
+        self.data_exp = []
+
+        # Setting up compound list
+        if compound_list is None:
             cl_exp = set().union(*(d.keys() for d in exp_data))
             cl_comp = set().union(*(d.keys() for d in comp_data))
             compound_list = list(set(cl_exp).intersection(cl_comp))
@@ -75,12 +129,7 @@ class freeEnergyStats(object):
         else:
             self._compound_list = compound_list
 
-        self.data_comp = []
-        self.data_exp = []
-        self._R = []
-        self._R2 = []
-        self._tau = []
-        self._mue = []
+        # Setting up computed and experimental dictionaries
         for k in self._compound_list:
             comp = next(item for item in comp_data if k in item)
             exp = next(item for item in exp_data if k in item)
@@ -89,6 +138,17 @@ class freeEnergyStats(object):
             self.data_comp.append([val, err])
             val = exp[k]
             self.data_exp.append(val)
+
+        self._R_from_data, p = scipy.stats.pearsonr(self.data_comp, self.data_exp)
+        self._rmse_from_data = self._calculate_rmse(self.data_comp, self.data_exp)
+
+        self._R = []
+        self._R2 = []
+        self._tau = []
+        self._mue = []
+        self._rmse = []
+
+        # Now generate the data
         for i in range(repeats):
             new_data = []
             for i in range(len(self.data_comp)):
@@ -102,10 +162,14 @@ class freeEnergyStats(object):
             R2, R = self._calculate_r2(new_data, self.data_exp)
             tau = self._calculate_tau(new_data, self.data_exp)
             mue = self._calculate_mue(new_data, self.data_exp)
+            rmse = self._calculate_rmse(new_data, self.data_exp)
             self._R.append(R)
             self._R2.append(R2)
             self._tau.append(tau)
             self._mue.append(mue)
+            self._rmse.append(rmse)
+
+
 
     def _calculate_predictive_index(self, series1, series2):
         '''r This function needs to be implemented properly'''
@@ -139,6 +203,9 @@ class freeEnergyStats(object):
         PI = sumwijcij/sumwij
         return PI
         '''
+
+    def _calculate_rmse(self, prediction, target):
+            return np.sqrt(np.mean(np.square(target - prediction)))
 
     def _calculate_r2(self, series1, series2):
         r_value, p = scipy.stats.pearsonr(series1, series2)
@@ -175,6 +242,38 @@ class freeEnergyStats(object):
             warnings.warn(UserWarning(
                 'Confidence interval needs to be between 0 and 1, please try something like 0.68 for one sigma confidence'))
         self._confidence_interval = confidence_interval
+
+    @property
+    def pearson_r(self):
+        """
+        Returns:
+        -------
+        person R of input datasets
+        """
+        return self._R_from_data
+
+    @property
+    def rmse(self):
+        """
+        Returns:
+        -------
+        rmse from input dataset
+        """
+        return self._rmse_from_data
+    
+    @property
+    def rmse_std(self):
+        return np.std(self._rmse)
+
+    @property
+    def rmse_confidence(self):
+        self._rmse_error = self._confidence(self._rmse)
+        self._rmse_error = np.concatenate([[np.median(self._rmse)], self._rmse_error])
+        return self._rmse_error
+
+    @property
+    def rmse_mean(self):
+        return np.mean(self._rmse)
 
     @property
     def R_mean(self):
