@@ -173,8 +173,8 @@ class PerturbationGraph(object):
                 avg_weight_forw = np.mean([w_forward['weight'], -w_backward['weight']])
                 avg_weight_back = -avg_weight_forw
                 error = np.std([w_forward['weight'], -w_backward['weight']]) / np.sqrt(2.0)
-                if error == 0:
-                    error = np.mean([w_forward['error'], -w_backward['error']])
+                if error == 0.0:
+                    error = np.mean([w_forward['error'], w_backward['error']])
                 symmetrizedGraph.add_edge(u, v, weight=avg_weight_forw, error=error)
                 symmetrizedGraph.add_edge(v, u, weight=avg_weight_back, error=error)
             else:
@@ -246,7 +246,7 @@ class PerturbationGraph(object):
             mols[moln].append([nrg, err])
         ids = list(mols.keys())
         ids.sort()
-        if compound_order != None:
+        if compound_order is not None:
             if set(compound_order).issubset(ids):
                 ids = compound_order
             else:
@@ -255,7 +255,7 @@ class PerturbationGraph(object):
                 print (ids)
                 sys.exit(1)
         for mol in ids:
-            if intermed_ID != None:
+            if intermed_ID is not None:
                 if mol.startswith(intermed_ID):
                     continue
             nrgtot = 0.0
@@ -283,7 +283,7 @@ class PerturbationGraph(object):
             format string for the free energies, e.g. '%s, %f, %f\n'
             Default = None
         """
-        if filename != None:
+        if filename is not None:
             f = open(filename, 'w')
         else:
             print ('#FREE ENERGIES ARE:')
@@ -294,17 +294,17 @@ class PerturbationGraph(object):
                 else:
                     r_energy_k = k
                     r_energy_v = v
-            if filename != None:
-                if fmt == None:
+            if filename is not None:
+                if fmt is None:
                     f.write('%s, %f, %f\n' % (r_energy_k, r_energy_v, error))
                 else:
                     f.write(fmt % (r_energy_k, r_energy_v, error))
             else:
-                if fmt == None:
+                if fmt is None:
                     print('{:10s} {:5.3f} +/- {:5.3f}'.format(r_energy_k, r_energy_v, error))
                 else:
                     print (fmt % (r_energy_k, r_energy_v, error))
-        if filename != None:
+        if filename is not None:
             f.close()
 
     def shift_free_energies(self, shift_value=0.0):

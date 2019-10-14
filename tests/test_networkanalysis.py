@@ -27,6 +27,12 @@ def test_double_call_pert_graph_not_None(pG):
     assert len(warnmessg) == 1
     assert warnmessg[0].message.args[0] == warn_string
 
+def test_perfect_graph(pG):
+    pG.populate_pert_graph('tests/io/test_perfect_graph.csv')
+    G = pG.graph
+    for edge in G.edges:
+        data = G.get_edge_data(edge[0], edge[1])
+        assert data['error'] is not 0.0
 # def test_symmetrize_graph():
 #    newGraph = nx.read_edgelist('tests/io/graph.csv', delimiter=',', comments='#', nodetype=str, data=(('weight', float),('error',float)))
 
