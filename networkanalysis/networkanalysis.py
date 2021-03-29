@@ -25,9 +25,217 @@ __email__ = "antonia.mey@ed.ac.uk"
 
 import numpy as np
 import networkx as nx
-import copy
 import sys
 import warnings
+import math
+
+class NetworkAnalyser(object):
+
+    def __init__(self, use_weights=True, target_compound=None, iterations=10000):
+        self._weights = {}
+        self._free_energies = {}
+        self.use_weights = use_weights
+        self.target_compound = target_compound
+        self.iterations = iterations
+
+    def read_file(self, filename):
+        """
+            Read the input data from a CSV file - pass in the leftover cmdline arguments
+        """
+        f = open(filename)
+        lines = f.readlines()
+        for line in lines:
+            if line.find(",") != -1 and not line.startswith("#"):
+                mol1, mol2, nrg, err = line.split(",")
+                if mol1 not in self._free_energies:
+                    self._free_energies[mol1] = {}
+                    self._weights[mol1] = {}
+                self._free_energies[mol1][mol2] = float(nrg)
+                self._weights[mol1][mol2] = 1 / (float(err) * float(err))
+
+        print("Processed ", len(self._free_energies), " molecules")
+
+
+    def populate_network(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight', float), ('error', float))):
+        graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),
+                                 nodetype=nodetype, data=data)
+
+    def _get_avg_nrg(self, mol1, mol2):
+        """ Given two keys, return the average of the links in both directions if possible, otherwise just
+            the value from name1 to name2
+        """
+        eng1 = None
+        try:
+            eng1 = self._free_energies[mol1][mol2]
+        except KeyError:
+            eng1 = None
+        try:
+            eng2 = -self._free_energies[mol1][mol2]
+        except KeyError:
+            eng2 = None
+        if eng1 and eng2:
+            return (eng1 + eng2) / 2.0
+        elif eng1:
+            return eng1
+        elif eng2:
+            return eng2
+        return None
+
+    def _compute_weight_matrix(self):
+        """
+            Create the W weights matrix corresponding to the A matrix
+        """
+        w = [1]
+        for mol1 in self.compound_list:
+            for mol2 in self.compound_list:
+                if mol1 < mol2:
+                    if mol1 in self._free_energies:
+                        if mol2 in self._free_energies[mol1]:
+                            if self.use_weights:
+                                w.append(self._get_avg_weight(mol1, mol2))
+                            else:
+                                w.append(1.0)
+
+        # Convert weights array to diagonal matrix
+        W = np.zeros(shape=[len(w), len(w)], dtype="float64")
+        for i in range(len(w)):
+            W[i, i] = w[i]
+        return W
+
+    def _compute_vector(self):
+        """
+            Create the b vector holding the pairwise ddG values
+        """
+        b = [0]
+        compound_list = self.compound_list
+        for mol1 in compound_list:
+            for mol2 in compound_list:
+                if mol1 < mol2:
+                    if mol1 in self._free_energies:
+                        if mol2 in self._free_energies[mol1]:
+                            b.append(self.get_avg_nrg(mol1, mol2))
+        return b
+
+    def _compute_adjacency_matrix(self):
+        compound_list = self.compound_list
+        firstrow = [0] * len(self._free_energies)
+        itg = 0
+        if self.target_compound is not None:
+            itg = compound_list.index(self.target_compound)
+        firstrow[itg] = 1
+        A = np.array([firstrow], dtype="float64")
+
+        for name1 in compound_list:
+            for name2 in compound_list:
+                if name1 < name2:
+                    if name1 in self._free_energies:
+                        if name2 in self._free_energies[name1]:
+                            row = [0] * len(compound_list)
+                            row[compound_list.index(name1)] = -1
+                            row[compound_list.index(name2)] = 1
+                            A = np.append(A, [row], axis=0)
+        return A
+
+    def dG(self):
+        """
+            Solve the graph and return the list of dG values. The values
+            are for the molecules as listed in self.allmols()
+
+            Run 'self.iterations' iterations of bootstrap error
+            analysis and return the standard deviation of each value as well.
+        """
+
+        # Now we want so solve A'*W*A x = A'*W b - see the Wikipedia entry on weighted
+        # least squares for the gory details
+        A = self._compute_adjacency_matrix()
+        W = self._compute_weight_matrix()
+        b = self._compute_vector()
+        AT_W_A = np.dot((np.dot(np.transpose(A), W)), A)
+        AT_W_b = np.dot((np.dot(np.transpose(A), W)), b)
+        x = np.linalg.solve(AT_W_A, AT_W_b)
+
+        h = self.hysteresis()
+        err = np.zeros(shape=[len(x), self.iterations], dtype="float64")
+        for r in range(self.iterations):
+            # Compute eb, which is b with random noise sized by the hysteresis
+            # Given two values, the hysteresis is the difference between them,
+            # and the standard deviation is sqrt(2)/2 times this
+            eb = b + np.random.normal(0, [hx * math.sqrt(2.0) / 2.0 for hx in h])
+
+            # Solve with eb
+            AT_W_eb = np.dot((np.dot(np.transpose(A), W)), eb)
+            ex = np.linalg.solve(AT_W_A, AT_W_eb)
+
+            # Append these results as a new column in err
+            err[:, r] = ex
+
+        # Compute standard deviations for each row of err:
+        # use ddof=1 for sample estimate rather than population estimate
+        xstd = [np.std(err[i, :], ddof=1) for i in range(len(x))]
+        return (x, xstd)
+
+    def hysteresis(self, minh=0.4):
+        """
+            Create the hysteresis vector holding the pairwise hysteresis values
+            The minimum hysteresis value is minh (also used if a link is unidirectional)
+        """
+        h = [0]
+        for name1 in self.compound_list:
+            for name2 in self.compound_list:
+                if name1 < name2:
+                    if name1 in self._free_energies:
+                        if name2 in self._free_energies[name1]:
+                            h.append(self.get_hysteresis(name1, name2, minh))
+        return h
+
+    def get_hysteresis(self, mol1, mol2, minh=0.4):
+        """ Given two keys, return the hysteresis of the links, or minh
+            if that is higher. If either link is missing returns minh.
+        """
+        try:
+            eng1 = self._free_energies[mol1][mol2]
+        except KeyError:
+            return minh
+        try:
+            eng2 = self._free_energies[mol2][mol1]
+        except KeyError:
+            return minh
+        return max(minh, abs(eng1 + eng2))
+
+    def _dict_to_list(self, dict_of_dicts):
+        print('Ha!')
+
+    @property
+    def weights(self):
+        return self._weights
+
+    @property
+    def free_energies(self):
+        """ Return the free energies as a list of dictionaries
+        """
+        return self._dict_to_list(self._free_energies)
+
+    @property
+    def compound_list(self):
+        return list(self._free_energies.keys()).sort()
+
+    def _get_avg_weight(self, mol1, mol2):
+        """ Given two keys, return the average weight of
+            the links, otherwise just whichever value exists
+        """
+        try:
+            wt1 = self._weights[mol1][mol2]
+        except KeyError:
+            wt1 = None
+        try:
+            wt2 = self._weights[mol1][mol2]
+        except KeyError:
+            wt2 = None
+        if wt1 and wt2:
+            return (wt1 + wt2) / 2.0
+        elif wt1:
+            return wt1
+        return wt2
 
 
 class PerturbationGraph(object):
@@ -40,6 +248,9 @@ class PerturbationGraph(object):
         self._weighted_paths = None
         self._compoundList = []
         self._free_energies = []
+        warnings.warn(
+            'PerturbationGraph is deprecated use Network analyser instead.',
+            warnings.DeprecationWarning, stacklevel=2)
 
     def populate_pert_graph(self, filename, delimiter=',', comments='#', nodetype=str,
                             data=(('weight', float), ('error', float))):
@@ -49,7 +260,7 @@ class PerturbationGraph(object):
         ----------
         filename : String
             filename of the forward and backward perturbation generated from simulation output
-            Filestructure should be:
+            File structure should be:
             node1,node2,DG,eDG,other_attributes
         delimiter : String
             delimiter for network file 
@@ -410,7 +621,7 @@ class PerturbationGraph(object):
                 if print_all:
                     print ('DDG for cycle %s is %.2f +/- %.2f kcal/mol' % (c, sum, error))
 
-    def rename_compounds():
+    def rename_compounds(self):
         warnings.warn(NotImplementedError)('This function is not implemented yet')
         sys.exit(1)
 
