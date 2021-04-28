@@ -4,7 +4,7 @@ import networkx as nx
 from networkanalysis.networkanalysis import *
 
 
-@pytest.figure
+@pytest.fixture
 def nA():
     return NetworkAnalyser()
 
@@ -19,43 +19,43 @@ def test_dG_simple(nA):
     validate_results(y,[0.4,0.4],0.05)
 
 def test_perfectcycle(nA):
-    nA.read_perturbations("tests/io/perfectcycle.csv")
+    nA.read_perturbations('tests/io/perfectcycle.csv')
     x,y = nA.dG()
     validate_results(x, [-0.5, 0.5, 0])
     validate_results(y, [0.4, 0.4, 0.4], 0.05)
 
-def test_inconsistentcycle():
-    nA.read_perturbations("tests/io/inconsistentcycle.csv")
+def test_inconsistentcycle(nA):
+    nA.read_perturbations('tests/io/inconsistentcycle.csv')
     x,y = nA.dG()
     validate_results(x, [0, 0, 0])
     validate_results(y, [0.4, 0.4, 0.4], 0.05)
 
-def test_inconsistentcycle_weights():
+def test_inconsistentcycle_weights(nA):
     nA.read_perturbations("tests/io/inconsistentcycle_weights.csv")
     x,y = nA.dG()
     validate_results(x, [-0.5, 0.5, 0])
     validate_results(y, [0.44, 0.44, 0.38], 0.05)
 
-def test_large_hysteresis():
+def test_large_hysteresis(nA):
     nA.read_perturbations("tests/io/large_hysteresis.csv")
     x, y = nA.dG()
     validate_results(x, [-0.5, 0.5, 0])
     validate_results(y, [0.66, 0.66, 0.66], 0.05)
 
-def test_vlarge_hysteresis():
+def test_vlarge_hysteresis(nA):
     nA.read_perturbations("tests/io/vlarge_hysteresis.csv")
     x, y = nA.dG()
     validate_results(x, [-0.5, 0.5, 0])
     validate_results(y, [1.60, 1.60, 1.60], 0.05)
 
-def test_large_cycle():
+def test_large_cycle(nA):
     nA.read_perturbations("tests/io/large_cycle.csv")
     x, y = nA.dG()
     x = [t - x[0] for t in x]  # Set the first mol to zero
     validate_results(x, [0.0, 1.0, 2.0, 3.0, 4.0, 4.0, 3.0, 2.0])
     validate_results(y, [0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65, 0.65], 0.05)
 
-def test_large_cycle_poor_link():
+def test_large_cycle_poor_link(nA):
     nA.read_perturbations("tests/io/freenrg_large_cycle_poor_link.csv")
     x, y = nA.dG()
     x = [t - x[0] for t in x]  # Set the first mol to zero
@@ -64,7 +64,7 @@ def test_large_cycle_poor_link():
     # is present but has a very low weight
     validate_results(y, [1.1772, 0.9524, 0.7728, 0.6652, 0.6612, 0.7720, 0.9576, 1.1777], 0.05)
 
-def test_DG_noise_handling():
+def test_DG_noise_handling(nA):
     nA.read_perturbations("tests/io/noise0.csv")
     x, y = nA.dG()
     x = [t - x[0] for t in x]  # Set the first mol to zero
