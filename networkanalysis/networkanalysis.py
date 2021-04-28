@@ -34,14 +34,25 @@ class NetworkAnalyser(object):
     def __init__(self, use_weights=True, target_compound=None, iterations=10000):
         self._weights = {}
         self._free_energies = {}
+        self._compoundList = None
         self.use_weights = use_weights
+        self._nlinks = 0
         self.target_compound = target_compound
         self.iterations = iterations
 
-    def read_file(self, filename):
+    def read_perturbations(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight', float), ('error', float))):
+        """Reads a networkX compatible CSV file
         """
-            Read the input data from a CSV file - pass in the leftover cmdline arguments
-        """
+        graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),
+                                 nodetype=nodetype, data=data)
+
+        # populate compound list:
+        self._compoundList = list(graph.nodes())
+        self._compoundList.sort()
+        print('The graph is:')
+        print(graph.nodes())
+        print('done')
+
         f = open(filename)
         lines = f.readlines()
         for line in lines:
@@ -50,15 +61,14 @@ class NetworkAnalyser(object):
                 if mol1 not in self._free_energies:
                     self._free_energies[mol1] = {}
                     self._weights[mol1] = {}
+                if mol2 not in self._free_energies:
+                    self._free_energies[mol2] = {}
+                    self._weights[mol2] = {}
                 self._free_energies[mol1][mol2] = float(nrg)
                 self._weights[mol1][mol2] = 1 / (float(err) * float(err))
-
+                self._nlinks +=1
+        f.close()
         print("Processed ", len(self._free_energies), " molecules")
-
-
-    def populate_network(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight', float), ('error', float))):
-        graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),
-                                 nodetype=nodetype, data=data)
 
     def _get_avg_nrg(self, mol1, mol2):
         """ Given two keys, return the average of the links in both directions if possible, otherwise just
@@ -70,31 +80,28 @@ class NetworkAnalyser(object):
         except KeyError:
             eng1 = None
         try:
-            eng2 = -self._free_energies[mol1][mol2]
+            eng2 = -self._free_energies[mol2][mol1]
         except KeyError:
             eng2 = None
-        if eng1 and eng2:
+        if eng1 is not None and eng2 is not None:
             return (eng1 + eng2) / 2.0
-        elif eng1:
+        elif eng1 is not None:
             return eng1
-        elif eng2:
-            return eng2
-        return None
+        return eng2
 
     def _compute_weight_matrix(self):
         """
             Create the W weights matrix corresponding to the A matrix
         """
         w = [1]
-        for mol1 in self.compound_list:
-            for mol2 in self.compound_list:
-                if mol1 < mol2:
-                    if mol1 in self._free_energies:
-                        if mol2 in self._free_energies[mol1]:
-                            if self.use_weights:
-                                w.append(self._get_avg_weight(mol1, mol2))
-                            else:
-                                w.append(1.0)
+        for name1 in self._free_energies:
+            for name2 in self._free_energies[name1]:
+                # Only handle links one way round: if both links present then only take one of them
+                if (name1<name2 or name2 not in self._free_energies or name1 not in self._free_energies[name2]):
+                    if self.use_weights:
+                        w.append(self._get_avg_weight(name1, name2))
+                    else:
+                        w.append(1.0)
 
         # Convert weights array to diagonal matrix
         W = np.zeros(shape=[len(w), len(w)], dtype="float64")
@@ -107,33 +114,27 @@ class NetworkAnalyser(object):
             Create the b vector holding the pairwise ddG values
         """
         b = [0]
-        compound_list = self.compound_list
-        for mol1 in compound_list:
-            for mol2 in compound_list:
-                if mol1 < mol2:
-                    if mol1 in self._free_energies:
-                        if mol2 in self._free_energies[mol1]:
-                            b.append(self.get_avg_nrg(mol1, mol2))
+        for name1 in self._free_energies:
+            for name2 in self._free_energies[name1]:
+                # Only handle links one way round: if both links present then only take one of them
+                if (name1<name2 or name2 not in self._free_energies or name1 not in self._free_energies[name2]):
+                    b.append(self._get_avg_nrg(name1, name2))
         return b
 
     def _compute_adjacency_matrix(self):
-        compound_list = self.compound_list
-        firstrow = [0] * len(self._free_energies)
-        itg = 0
-        if self.target_compound is not None:
-            itg = compound_list.index(self.target_compound)
-        firstrow[itg] = 1
+
+        firstrow = [0] * len(self._compoundList)
+        firstrow[0] = 1
         A = np.array([firstrow], dtype="float64")
 
-        for name1 in compound_list:
-            for name2 in compound_list:
-                if name1 < name2:
-                    if name1 in self._free_energies:
-                        if name2 in self._free_energies[name1]:
-                            row = [0] * len(compound_list)
-                            row[compound_list.index(name1)] = -1
-                            row[compound_list.index(name2)] = 1
-                            A = np.append(A, [row], axis=0)
+        for name1 in self._free_energies:
+            for name2 in self._free_energies[name1]:
+                # Only handle links one way round: if both links present then only take one of them
+                if (name1<name2 or name2 not in self._free_energies or name1 not in self._free_energies[name2]):
+                    row = [0] * len(self._compoundList)
+                    row[self._compoundList.index(name1)] = -1
+                    row[self._compoundList.index(name2)] = 1
+                    A = np.append(A, [row], axis=0)
         return A
 
     def dG(self):
@@ -148,23 +149,36 @@ class NetworkAnalyser(object):
         # Now we want so solve A'*W*A x = A'*W b - see the Wikipedia entry on weighted
         # least squares for the gory details
         A = self._compute_adjacency_matrix()
+        print("Adjacency is:  ")
+        print(A)
+        print("---------")
         W = self._compute_weight_matrix()
+        print("Weight is: ")
+        print(W)
+        print("----------")
         b = self._compute_vector()
+        print("b is: ")
+        print(b)
+        print('----------')
         AT_W_A = np.dot((np.dot(np.transpose(A), W)), A)
         AT_W_b = np.dot((np.dot(np.transpose(A), W)), b)
         x = np.linalg.solve(AT_W_A, AT_W_b)
+        print(x)
+        x = x - np.mean(x)
 
-        h = self.hysteresis()
+        h = self._error_estimate()
         err = np.zeros(shape=[len(x), self.iterations], dtype="float64")
         for r in range(self.iterations):
             # Compute eb, which is b with random noise sized by the hysteresis
             # Given two values, the hysteresis is the difference between them,
             # and the standard deviation is sqrt(2)/2 times this
-            eb = b + np.random.normal(0, [hx * math.sqrt(2.0) / 2.0 for hx in h])
+            eb = b + np.random.normal(0, h)
 
             # Solve with eb
             AT_W_eb = np.dot((np.dot(np.transpose(A), W)), eb)
             ex = np.linalg.solve(AT_W_A, AT_W_eb)
+
+            ex = ex - np.mean(ex)
 
             # Append these results as a new column in err
             err[:, r] = ex
@@ -174,18 +188,17 @@ class NetworkAnalyser(object):
         xstd = [np.std(err[i, :], ddof=1) for i in range(len(x))]
         return (x, xstd)
 
-    def hysteresis(self, minh=0.4):
+    def _error_estimate(self, minh=0.4):
         """
             Create the hysteresis vector holding the pairwise hysteresis values
             The minimum hysteresis value is minh (also used if a link is unidirectional)
         """
         h = [0]
-        for name1 in self.compound_list:
-            for name2 in self.compound_list:
-                if name1 < name2:
-                    if name1 in self._free_energies:
-                        if name2 in self._free_energies[name1]:
-                            h.append(self.get_hysteresis(name1, name2, minh))
+        for name1 in self._free_energies:
+            for name2 in self._free_energies[name1]:
+                # Only handle links one way round: if both links present then only take one of them
+                if (name1<name2 or name2 not in self._free_energies or name1 not in self._free_energies[name2]):
+                    h.append(self.get_hysteresis(name1, name2, minh)+0.4)
         return h
 
     def get_hysteresis(self, mol1, mol2, minh=0.4):
@@ -215,9 +228,6 @@ class NetworkAnalyser(object):
         """
         return self._dict_to_list(self._free_energies)
 
-    @property
-    def compound_list(self):
-        return list(self._free_energies.keys()).sort()
 
     def _get_avg_weight(self, mol1, mol2):
         """ Given two keys, return the average weight of
