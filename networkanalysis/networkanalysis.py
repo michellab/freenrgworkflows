@@ -27,20 +27,23 @@ import numpy as np
 import networkx as nx
 import sys
 import warnings
-import math
+
 
 class NetworkAnalyser(object):
 
-    def __init__(self, use_weights=True, target_compound=None, iterations=10000):
+    def __init__(self, use_weights=True, target_compound=None, iterations=10000, verbose=False):
         self._weights = {}
-        self._free_energies = {}
+        self._ddG_edges = {}
         self._compoundList = None
+        self._free_energies = []
         self.use_weights = use_weights
         self._nlinks = 0
         self.target_compound = target_compound
         self.iterations = iterations
+        self._verbose = verbose
 
-    def read_perturbations(self, filename, delimiter=',', comments='#', nodetype=str, data=(('weight', float), ('error', float))):
+    def read_perturbations(self, filename, delimiter=',', comments='#', nodetype=str,
+                           data=(('weight', float), ('error', float))):
         """Reads a networkX compatible CSV file
         """
         graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),
@@ -49,38 +52,50 @@ class NetworkAnalyser(object):
         # populate compound list:
         self._compoundList = list(graph.nodes())
         self._compoundList.sort()
-        print('The graph is:')
-        print(graph.nodes())
-        print('done')
+        if self._verbose:
+            print('The graph is:')
+            print(graph.nodes())
+            print('done')
 
         f = open(filename)
         lines = f.readlines()
         for line in lines:
             if line.find(",") != -1 and not line.startswith("#"):
                 mol1, mol2, nrg, err = line.split(",")
-                if mol1 not in self._free_energies:
-                    self._free_energies[mol1] = {}
+                if mol1 not in self._ddG_edges:
+                    self._ddG_edges[mol1] = {}
                     self._weights[mol1] = {}
-                if mol2 not in self._free_energies:
-                    self._free_energies[mol2] = {}
+                if mol2 not in self._ddG_edges:
+                    self._ddG_edges[mol2] = {}
                     self._weights[mol2] = {}
-                self._free_energies[mol1][mol2] = float(nrg)
+                self._ddG_edges[mol1][mol2] = float(nrg)
                 self._weights[mol1][mol2] = 1 / (float(err) * float(err))
-                self._nlinks +=1
+                self._nlinks += 1
         f.close()
-        print("Processed ", len(self._free_energies), " molecules")
+        if self._verbose:
+            print("Processed ", len(self._ddG_edges), " molecules")
 
     def _get_avg_nrg(self, mol1, mol2):
-        """ Given two keys, return the average of the links in both directions if possible, otherwise just
-            the value from name1 to name2
+        """ Two molecular IDs return an average energy
+        Parameters:
+        -----------
+        mol1 : string
+            molecular ID key
+        mol2 : string
+            molecular ID key
+
+        Returns:
+        -------
+        energy : float
+            the average free energy from two IDs
         """
         eng1 = None
         try:
-            eng1 = self._free_energies[mol1][mol2]
+            eng1 = self._ddG_edges[mol1][mol2]
         except KeyError:
             eng1 = None
         try:
-            eng2 = -self._free_energies[mol2][mol1]
+            eng2 = -self._ddG_edges[mol2][mol1]
         except KeyError:
             eng2 = None
         if eng1 is not None and eng2 is not None:
@@ -90,35 +105,37 @@ class NetworkAnalyser(object):
         return eng2
 
     def _compute_weight_matrix(self):
-        """
-            Create the W weights matrix corresponding to the A matrix
+        """ Diagonal matrix containing weights that correspond to the adjacency matrix
+        Returns:
+        -------
+        W : 2D numpy array
+            Diagonal matrix containing weights
         """
         w = [1]
-        for name1 in self._free_energies:
-            for name2 in self._free_energies[name1]:
+        for mol1 in self._ddG_edges:
+            for mol2 in self._ddG_edges[mol1]:
                 # Only handle links one way round: if both links present then only take one of them
-                if (name1<name2 or name2 not in self._free_energies or name1 not in self._free_energies[name2]):
+                if mol1 < mol2 or mol2 not in self._ddG_edges or mol1 not in self._ddG_edges[mol2]:
                     if self.use_weights:
-                        w.append(self._get_avg_weight(name1, name2))
+                        w.append(self._get_avg_weight(mol1, mol2))
                     else:
                         w.append(1.0)
-
-        # Convert weights array to diagonal matrix
-        W = np.zeros(shape=[len(w), len(w)], dtype="float64")
-        for i in range(len(w)):
-            W[i, i] = w[i]
+        W = np.diag(w)
         return W
 
     def _compute_vector(self):
-        """
-            Create the b vector holding the pairwise ddG values
+        """ Vector containing the pairwise DDG values
+        Returns:
+        -------
+        b : numpy array
+            array containing pairwise DDGs
         """
         b = [0]
-        for name1 in self._free_energies:
-            for name2 in self._free_energies[name1]:
+        for mol1 in self._ddG_edges:
+            for mol2 in self._ddG_edges[mol1]:
                 # Only handle links one way round: if both links present then only take one of them
-                if (name1<name2 or name2 not in self._free_energies or name1 not in self._free_energies[name2]):
-                    b.append(self._get_avg_nrg(name1, name2))
+                if mol1 < mol2 or mol2 not in self._ddG_edges or mol1 not in self._ddG_edges[mol2]:
+                    b.append(self._get_avg_nrg(mol1, mol2))
         return b
 
     def _compute_adjacency_matrix(self):
@@ -127,47 +144,48 @@ class NetworkAnalyser(object):
         firstrow[0] = 1
         A = np.array([firstrow], dtype="float64")
 
-        for name1 in self._free_energies:
-            for name2 in self._free_energies[name1]:
+        for name1 in self._ddG_edges:
+            for name2 in self._ddG_edges[name1]:
                 # Only handle links one way round: if both links present then only take one of them
-                if (name1<name2 or name2 not in self._free_energies or name1 not in self._free_energies[name2]):
+                if name1 < name2 or name2 not in self._ddG_edges or name1 not in self._ddG_edges[name2]:
                     row = [0] * len(self._compoundList)
                     row[self._compoundList.index(name1)] = -1
                     row[self._compoundList.index(name2)] = 1
                     A = np.append(A, [row], axis=0)
         return A
 
-    def dG(self):
+    def _compute_free_energies(self):
         """
-            Solve the graph and return the list of dG values. The values
-            are for the molecules as listed in self.allmols()
+            Solves the least square graph problem and populates _free_energies.
 
+            Errors are computed using boostrapping and the
             Run 'self.iterations' iterations of bootstrap error
             analysis and return the standard deviation of each value as well.
         """
 
-        # Now we want so solve A'*W*A x = A'*W b - see the Wikipedia entry on weighted
+        # Now we want so solve A'*W*A dG = A'*W b - see the Wikipedia entry on weighted
         # least squares for the gory details
         A = self._compute_adjacency_matrix()
-        print("Adjacency is:  ")
-        print(A)
-        print("---------")
         W = self._compute_weight_matrix()
-        print("Weight is: ")
-        print(W)
-        print("----------")
         b = self._compute_vector()
-        print("b is: ")
-        print(b)
-        print('----------')
+        if self._verbose:
+            print("Adjacency is:  ")
+            print(A)
+            print("---------")
+            print("Weight is: ")
+            print(W)
+            print("----------")
+            print("b is: ")
+            print(b)
+            print('----------')
         AT_W_A = np.dot((np.dot(np.transpose(A), W)), A)
         AT_W_b = np.dot((np.dot(np.transpose(A), W)), b)
-        x = np.linalg.solve(AT_W_A, AT_W_b)
-        print(x)
-        x = x - np.mean(x)
+        dG = np.linalg.solve(AT_W_A, AT_W_b)
+
+        dG = dG - np.mean(dG)
 
         h = self._error_estimate()
-        err = np.zeros(shape=[len(x), self.iterations], dtype="float64")
+        err = np.zeros(shape=[len(dG), self.iterations], dtype="float64")
         for r in range(self.iterations):
             # Compute eb, which is b with random noise sized by the hysteresis
             # Given two values, the hysteresis is the difference between them,
@@ -185,8 +203,10 @@ class NetworkAnalyser(object):
 
         # Compute standard deviations for each row of err:
         # use ddof=1 for sample estimate rather than population estimate
-        xstd = [np.std(err[i, :], ddof=1) for i in range(len(x))]
-        return (x, xstd)
+        std_dG = [np.std(err[i, :], ddof=1) for i in range(len(dG))]
+        for c_idx in range(len(self._compoundList)):
+            entry = {self._compoundList[c_idx]: dG[c_idx], 'error': std_dG[c_idx]}
+            self._free_energies.append(entry)
 
     def _error_estimate(self, minh=0.4):
         """
@@ -194,40 +214,26 @@ class NetworkAnalyser(object):
             The minimum hysteresis value is minh (also used if a link is unidirectional)
         """
         h = [0]
-        for name1 in self._free_energies:
-            for name2 in self._free_energies[name1]:
+        for mol1 in self._ddG_edges:
+            for mol2 in self._ddG_edges[mol1]:
                 # Only handle links one way round: if both links present then only take one of them
-                if (name1<name2 or name2 not in self._free_energies or name1 not in self._free_energies[name2]):
-                    h.append(self.get_hysteresis(name1, name2, minh)+0.4)
+                if (mol1 < name2 or mol2 not in self._ddG_edges or mol1 not in self._ddG_edges[mol2]):
+                    h.append(self._get_hysteresis(mol1, mol2, minh) + 0.4)
         return h
 
-    def get_hysteresis(self, mol1, mol2, minh=0.4):
+    def _get_hysteresis(self, mol1, mol2, minh=0.4):
         """ Given two keys, return the hysteresis of the links, or minh
             if that is higher. If either link is missing returns minh.
         """
         try:
-            eng1 = self._free_energies[mol1][mol2]
+            eng1 = self._ddG_edges[mol1][mol2]
         except KeyError:
             return minh
         try:
-            eng2 = self._free_energies[mol2][mol1]
+            eng2 = self._ddG_edges[mol2][mol1]
         except KeyError:
             return minh
         return max(minh, abs(eng1 + eng2))
-
-    def _dict_to_list(self, dict_of_dicts):
-        print('Ha!')
-
-    @property
-    def weights(self):
-        return self._weights
-
-    @property
-    def free_energies(self):
-        """ Return the free energies as a list of dictionaries
-        """
-        return self._dict_to_list(self._free_energies)
-
 
     def _get_avg_weight(self, mol1, mol2):
         """ Given two keys, return the average weight of
@@ -247,6 +253,61 @@ class NetworkAnalyser(object):
             return wt1
         return wt2
 
+    def write_free_energies(self, freeEnergies, filename=None, fmt=None):
+        r"""Either write free energies to a file or std out
+        Parameters
+        ----------
+        freeEnergies : list of dictionaries
+            contains dictionaries with free energies and their errors
+        filename : string
+            file to which free energies should be written
+            default = None
+        fmt : string
+            format string for the free energies, e.g. '%s, %f, %f\n'
+            Default = None
+        """
+        if filename is not None:
+            f = open(filename, 'w')
+        else:
+            print ('#FREE ENERGIES ARE:')
+        for d in freeEnergies:
+            for k, v in iter(d.items()):
+                if k == 'error':
+                    error = v
+                else:
+                    r_energy_k = k
+                    r_energy_v = v
+            if filename is not None:
+                if fmt is None:
+                    f.write('%s, %f, %f\n' % (r_energy_k, r_energy_v, error))
+                else:
+                    f.write(fmt % (r_energy_k, r_energy_v, error))
+            else:
+                if fmt is None:
+                    print('{:10s} {:5.3f} +/- {:5.3f}'.format(r_energy_k, r_energy_v, error))
+                else:
+                    print (fmt % (r_energy_k, r_energy_v, error))
+        if filename is not None:
+            f.close()
+
+    @property
+    def weights(self):
+        return self._weights
+
+    @property
+    def freeEnergyInKcal(self):
+        """ Return the free energies as a list of dictionaries
+        """
+        if not self._free_energies:
+            self._compute_free_energies()
+            return self._free_energies
+        else:
+            return self._free_energies
+
+    @property
+    def compoundList(self):
+        return self._compoundList
+
 
 class PerturbationGraph(object):
     """Populates a directed free energy perturbation graph"""
@@ -259,8 +320,8 @@ class PerturbationGraph(object):
         self._compoundList = []
         self._free_energies = []
         warnings.warn(
-            'PerturbationGraph is deprecated use Network analyser instead.',
-            warnings.DeprecationWarning, stacklevel=2)
+            'PerturbationGraph is deprecated use the NetworkAnnalyser class instead.',
+            DeprecationWarning, stacklevel=2)
 
     def populate_pert_graph(self, filename, delimiter=',', comments='#', nodetype=str,
                             data=(('weight', float), ('error', float))):
@@ -283,7 +344,7 @@ class PerturbationGraph(object):
         data : list
             Default, weight and error on Free energies of node
         """
-        if self._graph == None:
+        if self._graph is None:
             graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),
                                      nodetype=nodetype, data=data)
             self._graph = self._symmetrize_graph(graph)
