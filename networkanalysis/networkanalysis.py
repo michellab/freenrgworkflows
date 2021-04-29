@@ -217,7 +217,7 @@ class NetworkAnalyser(object):
         for mol1 in self._ddG_edges:
             for mol2 in self._ddG_edges[mol1]:
                 # Only handle links one way round: if both links present then only take one of them
-                if (mol1 < name2 or mol2 not in self._ddG_edges or mol1 not in self._ddG_edges[mol2]):
+                if (mol1 < mol2 or mol2 not in self._ddG_edges or mol1 not in self._ddG_edges[mol2]):
                     h.append(self._get_hysteresis(mol1, mol2, minh) + 0.4)
         return h
 
