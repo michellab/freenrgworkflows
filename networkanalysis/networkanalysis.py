@@ -27,6 +27,7 @@ import numpy as np
 import networkx as nx
 import sys
 import warnings
+import pandas as pd
 
 
 class NetworkAnalyser(object):
@@ -41,6 +42,19 @@ class NetworkAnalyser(object):
         self.target_compound = target_compound
         self.iterations = iterations
         self._verbose = verbose
+
+    def read_perturbations_pandas(self, filename, delimiter=',', comments=None, source='lig_1', target='lig_2', edge_attr=['freenrg','error']):
+        data = pd.read_csv(filename,delimiter=delimiter,comment=comments)
+        graph = nx.from_pandas_edgelist(data,source=source, target=target,  edge_attr=edge_attr, create_using=nx.DiGraph())
+
+        # populate compound list:
+        self._compoundList = list(graph.nodes())
+        self._compoundList.sort()
+        if self._verbose:
+            print('The graph is:')
+            print(graph.nodes())
+            print('done')
+
 
     def read_perturbations(self, filename, delimiter=',', comments='#', nodetype=str,
                            data=(('weight', float), ('error', float))):
