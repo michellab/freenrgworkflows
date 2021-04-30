@@ -43,17 +43,87 @@ class NetworkAnalyser(object):
         self.iterations = iterations
         self._verbose = verbose
 
+    def identify_header(self, path, n=5, th=0.9):
+        df1 = pd.read_csv(path, header='infer', nrows=n)
+        df2 = pd.read_csv(path, header=None, nrows=n)
+        sim = (df1.dtypes.values == df2.dtypes.values).mean()
+        columns = len(df1.columns)
+        return 'infer' if sim < th else None, columns
+
     def read_perturbations_pandas(self, filename, delimiter=',', comments=None, source='lig_1', target='lig_2', edge_attr=['freenrg','error']):
-        data = pd.read_csv(filename,delimiter=delimiter,comment=comments)
-        graph = nx.from_pandas_edgelist(data,source=source, target=target,  edge_attr=edge_attr, create_using=nx.DiGraph())
+        header, n_cols = self._identify_header(filename)
+        if header is None:
+            col_head = [source, target, edge_attr[0], edge_attr[1]]
+            col_diff = n_cols-len(col_head)
+            if col_diff is 0:
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, header=col_head)
+            elif col_diff ==1:
+                col_head.append('engine')
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, header=col_head)
+            elif col_diff >1:
+                col_head.append('engine')
+                for x in range(col_diff-1):
+                    col_head.append('blub')
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, header=col_head)
+            elif col_diff<0:
+                warnings.warn("You don't have enough columns in your free energy perturbation results file")
+
+        else:
+            data = pd.read_csv(filename, delimiter=delimiter, comment=comments, header=header)
+        print(data)
+        data = data.dropna()
+        print(data)
+        graph = nx.from_pandas_edgelist(data, source=source, target=target,  edge_attr=edge_attr, create_using=nx.DiGraph())
+        largest = max(nx.strongly_connected_components(graph), key=len)
 
         # populate compound list:
         self._compoundList = list(graph.nodes())
         self._compoundList.sort()
+
+        for node in largest:
+            print(node)
+            if node not in self._ddG_edges:
+                self._ddG_edges[node] = {}
+                self._weights[node] = {}
+            out_edges = list(graph.out_edges(node))
+            for e in out_edges:
+                out_edge = e[1]
+                print(out_edge)
+                if out_edge not in self._ddG_edges:
+
+                    self._ddG_edges[out_edge] = {}
+                    self._weights[out_edge] = {}
+                edge_info = graph.get_edge_data(node, out_edge)
+                print(edge_info)
+                self._ddG_edges[node][out_edge] = float(edge_info[edge_attr[0]])
+                err = float(edge_info[edge_attr[1]])
+                self._weights[node][out_edge] = 1 / (float(err) * float(err))
+                self._nlinks += 1
+            in_edges = list(graph.in_edges(node))
+            for e in in_edges:
+                in_edge = e[0]
+                print(in_edge)
+                if in_edge not in self._ddG_edges:
+
+                    self._ddG_edges[in_edge] = {}
+                    self._weights[in_edge] = {}
+                edge_info = graph.get_edge_data(in_edge, node)
+                print(edge_info)
+                self._ddG_edges[in_edge][node] = float(edge_info[edge_attr[0]])
+                err = float(edge_info[edge_attr[1]])
+                self._weights[in_edge][node] = 1 / (float(err) * float(err))
+                self._nlinks += 1
+
+        if len(largest) is not len(self._compoundList):
+            warnings.warn('Provided network is not fully connected doing analysis on subgraph')
+
+
+
         if self._verbose:
             print('The graph is:')
             print(graph.nodes())
             print('done')
+        return graph
 
 
     def read_perturbations(self, filename, delimiter=',', comments='#', nodetype=str,
