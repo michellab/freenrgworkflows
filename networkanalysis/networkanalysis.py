@@ -42,44 +42,94 @@ class NetworkAnalyser(object):
         self.target_compound = target_compound
         self.iterations = iterations
         self._verbose = verbose
+        self._graph = None
 
-    def identify_header(self, path, n=5, th=0.9):
-        df1 = pd.read_csv(path, header='infer', nrows=n)
-        df2 = pd.read_csv(path, header=None, nrows=n)
+    def _identify_header(self, path, n=5, th=0.9, comments=None):
+        """
+
+        Parameters
+        ----------
+        comments : String
+            passing comments string along to deal with comment headers
+        """
+        df1 = pd.read_csv(path, header='infer', nrows=n, comment=comments)
+        df2 = pd.read_csv(path, header=None, nrows=n, comment=comments)
         sim = (df1.dtypes.values == df2.dtypes.values).mean()
         columns = len(df1.columns)
         return 'infer' if sim < th else None, columns
 
-    def read_perturbations_pandas(self, filename, delimiter=',', comments=None, source='lig_1', target='lig_2', edge_attr=['freenrg','error']):
-        header, n_cols = self._identify_header(filename)
+    def read_perturbations_pandas(self, filename, delimiter=',', comments=None, source='lig_1', target='lig_2',
+                                  edge_attr=['freenrg', 'error'], save_graph=False):
+        """ Reads a networkx compatible csv file using pandas dataframes
+
+        Parameters:
+        -----------
+        filename : path
+            path to the csv file containing free energies
+            Usually of the type:
+            lig1,lig2,dG,ddG,engine
+            a,b,-10,0.3,SOMD
+
+        delimiter: string
+            delimiter used for csv file, default is ','
+
+        comments : string
+            comment lines can be identified with a String, e.g. '#'
+
+        source : string
+            title of first column if inferred from header overridden
+
+        target : string
+            title of the second column if inferred from header overridden
+
+        edge_atrr : list of strings
+            titles of the 3rd and 4th column
+        """
+
+        header, n_cols = self._identify_header(filename, comments=comments)
+        print(header)
+        print(n_cols)
+        data = None
         if header is None:
             col_head = [source, target, edge_attr[0], edge_attr[1]]
-            col_diff = n_cols-len(col_head)
-            if col_diff is 0:
-                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, header=col_head)
-            elif col_diff ==1:
+            col_diff = n_cols - len(col_head)
+            if col_diff == 0:
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, names=col_head)
+            elif col_diff == 1:
                 col_head.append('engine')
-                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, header=col_head)
-            elif col_diff >1:
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, names=col_head)
+            elif col_diff > 1:
                 col_head.append('engine')
-                for x in range(col_diff-1):
-                    col_head.append('blub')
-                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, header=col_head)
-            elif col_diff<0:
-                warnings.warn("You don't have enough columns in your free energy perturbation results file")
+                for x in range(col_diff - 1):
+                    col_head.append('not_needed_' + str(x))
+                print(col_head)
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, names=col_head)
+            elif col_diff < 0:
+                raise ValueError("You don't have enough columns in your free energy perturbation results file")
 
         else:
             data = pd.read_csv(filename, delimiter=delimiter, comment=comments, header=header)
-        print(data)
+
+        # Getting rid of any NANs, this may make a network disconnected
         data = data.dropna()
+
         print(data)
-        graph = nx.from_pandas_edgelist(data, source=source, target=target,  edge_attr=edge_attr, create_using=nx.DiGraph())
+
+        # Now convert the pandas data frame to a networkx graph
+        graph = nx.from_pandas_edgelist(data, source=source, target=target, edge_attr=edge_attr,
+                                        create_using=nx.DiGraph())
+
+        # We want to know what the largest component is, so we know if we may not be able to estimate certain free
+        # energies
         largest = max(nx.strongly_connected_components(graph), key=len)
 
         # populate compound list:
         self._compoundList = list(graph.nodes())
         self._compoundList.sort()
+        if len(largest) is not len(self._compoundList):
+            warnings.warn('Provided network is not fully connected doing analysis on subgraph')
 
+        # We only do the analysis for the largest connected set of nodes
         for node in largest:
             print(node)
             if node not in self._ddG_edges:
@@ -90,7 +140,6 @@ class NetworkAnalyser(object):
                 out_edge = e[1]
                 print(out_edge)
                 if out_edge not in self._ddG_edges:
-
                     self._ddG_edges[out_edge] = {}
                     self._weights[out_edge] = {}
                 edge_info = graph.get_edge_data(node, out_edge)
@@ -104,7 +153,6 @@ class NetworkAnalyser(object):
                 in_edge = e[0]
                 print(in_edge)
                 if in_edge not in self._ddG_edges:
-
                     self._ddG_edges[in_edge] = {}
                     self._weights[in_edge] = {}
                 edge_info = graph.get_edge_data(in_edge, node)
@@ -113,23 +161,16 @@ class NetworkAnalyser(object):
                 err = float(edge_info[edge_attr[1]])
                 self._weights[in_edge][node] = 1 / (float(err) * float(err))
                 self._nlinks += 1
-
-        if len(largest) is not len(self._compoundList):
-            warnings.warn('Provided network is not fully connected doing analysis on subgraph')
-
-
-
-        if self._verbose:
-            print('The graph is:')
-            print(graph.nodes())
-            print('done')
-        return graph
-
+        if save_graph:
+            self._graph = graph
 
     def read_perturbations(self, filename, delimiter=',', comments='#', nodetype=str,
                            data=(('weight', float), ('error', float))):
         """Reads a networkX compatible CSV file
         """
+        warnings.warn(
+            'read_perturbations is depricated, please use read_perturbations_pandas',
+            DeprecationWarning, stacklevel=2)
         graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),
                                  nodetype=nodetype, data=data)
 
