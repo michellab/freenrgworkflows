@@ -87,8 +87,7 @@ class NetworkAnalyser(object):
         """
 
         header, n_cols = self._identify_header(filename, comments=comments)
-        print(header)
-        print(n_cols)
+
         data = None
         if header is None:
             col_head = [source, target, edge_attr[0], edge_attr[1]]
@@ -102,7 +101,6 @@ class NetworkAnalyser(object):
                 col_head.append('engine')
                 for x in range(col_diff - 1):
                     col_head.append('not_needed_' + str(x))
-                print(col_head)
                 data = pd.read_csv(filename, delimiter=delimiter, comment=comments, names=col_head)
             elif col_diff < 0:
                 raise ValueError("You don't have enough columns in your free energy perturbation results file")
@@ -113,7 +111,7 @@ class NetworkAnalyser(object):
         # Getting rid of any NANs, this may make a network disconnected
         data = data.dropna()
 
-        print(data)
+        # print(data)
 
         # Now convert the pandas data frame to a networkx graph
         graph = nx.from_pandas_edgelist(data, source=source, target=target, edge_attr=edge_attr,
@@ -131,19 +129,19 @@ class NetworkAnalyser(object):
 
         # We only do the analysis for the largest connected set of nodes
         for node in largest:
-            print(node)
+
             if node not in self._ddG_edges:
                 self._ddG_edges[node] = {}
                 self._weights[node] = {}
             out_edges = list(graph.out_edges(node))
             for e in out_edges:
                 out_edge = e[1]
-                print(out_edge)
+                # print(out_edge)
                 if out_edge not in self._ddG_edges:
                     self._ddG_edges[out_edge] = {}
                     self._weights[out_edge] = {}
                 edge_info = graph.get_edge_data(node, out_edge)
-                print(edge_info)
+
                 self._ddG_edges[node][out_edge] = float(edge_info[edge_attr[0]])
                 err = float(edge_info[edge_attr[1]])
                 self._weights[node][out_edge] = 1 / (float(err) * float(err))
@@ -151,12 +149,12 @@ class NetworkAnalyser(object):
             in_edges = list(graph.in_edges(node))
             for e in in_edges:
                 in_edge = e[0]
-                print(in_edge)
+                # print(in_edge)
                 if in_edge not in self._ddG_edges:
                     self._ddG_edges[in_edge] = {}
                     self._weights[in_edge] = {}
                 edge_info = graph.get_edge_data(in_edge, node)
-                print(edge_info)
+
                 self._ddG_edges[in_edge][node] = float(edge_info[edge_attr[0]])
                 err = float(edge_info[edge_attr[1]])
                 self._weights[in_edge][node] = 1 / (float(err) * float(err))
@@ -166,10 +164,27 @@ class NetworkAnalyser(object):
 
     def read_perturbations(self, filename, delimiter=',', comments='#', nodetype=str,
                            data=(('weight', float), ('error', float))):
-        """Reads a networkX compatible CSV file
+        r""" Read perturbations from networkx graph file
+
+        Parameters
+        ----------
+        filename : path
+            filename for computed free energies
+        delimiter : string
+            delimiter of csv file, Default: ','
+        comments : string
+            comment character, Default: '#'
+        nodetype : string
+
+        data : tuple
+
+        Returns
+        -------
+        None
         """
+
         warnings.warn(
-            'read_perturbations is depricated, please use read_perturbations_pandas',
+            'read_perturbations is deprecated, please use read_perturbations_pandas',
             DeprecationWarning, stacklevel=2)
         graph = nx.read_edgelist(filename, delimiter=delimiter, comments=comments, create_using=nx.DiGraph(),
                                  nodetype=nodetype, data=data)
