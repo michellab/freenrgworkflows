@@ -24,6 +24,8 @@ __author__ = "Antonia Mey"
 __email__ = "antonia.mey@ed.ac.uk"
 
 import numpy as np
+import warnings
+import pandas as pd
 import networkx as nx
 import scipy.stats
 import copy
@@ -45,11 +47,68 @@ class ExperimentalData(object):
         self._RTkcal = 1.987203611 * temperature
         self._keys = None
 
+    def compute_affinities(self, filename, data_type=None, comments=None, delimiter=','):
+        r"""
+
+
+        Parameters
+        ----------
+        filename : path
+            Path to file with experimental data
+            Data of type:
+            Compound name, affinity, error
+
+        data_type: string
+            type of experimental data provided chose from: ['k_D','IC50', 'pIC50', 'k_i']
+
+        Returns
+        -------
+
+        """
+        if data_type not in ['k_D','IC50', 'pIC50', 'K_i']:
+            raise ValueError('The data_type you have specified is not recognised please choose from: k_D, IC50, pIC50, K_i')
+        data = pd.read_csv(filename, comment=comments, delimiter=delimiter)
+        error_list = []
+        error = None
+        self._keys = []
+        self._ic50s = []
+        self._DG_in_kcal = []
+        self._DG_in_kJ = []
+
+        if data_type == 'IC50':
+            if len(data.columns) == 2:
+                error = self._kTkcal * np.log(2)
+            dG = []
+            for i in range(len(data)):
+                r = float(data.iloc[i, 1] / data.iloc[0, 1])
+                dG.append(self._kTkcal * np.log(r))
+
+                if error is None:
+                    error_list.append(data.iloc[i,2])
+                else:
+                    error_list.append(error)
+            # Now we normalise the free energies
+            dG = dG - np.mean(dG)
+            for i in range(len(data)):
+                self._DG_in_kcal.append({data.iloc[i,0]:dG[i], 'error':error_list[i]})
+
+
+        elif data_type == 'k_D':
+            raise NotImplementedError
+        elif data_type == 'pIC50':
+            raise NotImplementedError
+        elif data_type == 'k_i':
+            raise NotImplementedError
+
+
     def compute_DDG_from_IC50s(self, filename, reference=None, smiles_string=False):
         r"""
         filename : string
             file containing ic50 data, format - compound name, ic50 value, error
         """
+        warnings.warn(
+            'compute_DDG_from_IC50s is deprecated use compute_affinites instead.',
+            DeprecationWarning, stacklevel=2)
         self._keys = []
         self._ic50s = []
         self._DG_in_kcal = []
@@ -96,6 +155,9 @@ class ExperimentalData(object):
         reference : string
             Name of the reference compound which will be used to compute DDGs for
         """
+        warnings.warn(
+            'compute_DDG_from_kD is deprecated use compute_affinites instead.',
+            DeprecationWarning, stacklevel=2)
         self._kD = []
         self._DG_in_kcal = []
         self._DG_in_kJ = []
