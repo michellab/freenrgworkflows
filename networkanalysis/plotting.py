@@ -29,8 +29,8 @@ import seaborn as sns
 import copy
 import numpy as np
 
-sns.set_style("ticks")
-sns.set_context("notebook", font_scale=2)
+# sns.set_style("ticks")
+# sns.set_context("notebook", font_scale=2)
 
 
 class FreeEnergyPlotter(object):
@@ -148,6 +148,120 @@ class FreeEnergyPlotter(object):
         plt.xlabel(xlabel, fontsize=15)
 
         sns.despine()
+
+    def _plot_master_plot(self, x, y, title='',
+                          xerr=None, yerr=None,
+                          method_name='', target_name='', quantity=rf'$\Delta \Delta$ G',
+                          xlabel=f'Experimental', ylabel=f'Calculated', units=r'$\mathrm{kcal\,mol^{-1}}$',
+                          guidelines=True, origins=True, color=None,
+                          statistics=['RMSE', 'MUE'], filename=None, centralizing=True,
+                          shift=0., figsize=6):
+        """ Handles the aesthetics of the plots in one place.
+        Parameters
+        ----------
+        x : list
+            Values to plot on the x axis
+        y : list
+            Values to plot on the y axis
+        title : string, default = ''
+            Title for the plot
+        xerr : list , default = None
+            Error bars for x values
+        yerr : list , default = None
+            Error bars for y values
+        method_name : string, optional
+            name of method associated with results, e.g. 'perses'
+        target_name : string, optional
+            name of system for results, e.g. 'Thrombin'
+        quantity : str, default = '$\Delta \Delta$ G'
+            metric that is being plotted
+        xlabel : str, default = 'Experimental'
+            label for xaxis
+        ylabel : str, default = 'Calculated'
+            label for yaxis
+        units : str, default = r'$\mathrm{kcal\,mol^{-1}}$'
+            string value of units to label axis
+        guidelines : bool, default = True
+            toggles plotting of grey 0.5 and 1 kcal/mol error zone
+        origins : bool, default = True
+            toggles plotting of x and y axis
+        color : str, default = None
+            if None, will be coloured according to distance from unity
+        statistics : list(str), default = ['RMSE',  'MUE']
+            list of statistics to calculate and report on the plot
+        filename : str, default = None
+            filename for plot
+        centralizing : bool, default = True
+            ofset the free energies
+        shift : float, default = 0.
+            shift both the x and y axis by a constant
+        figsize : float, default = 3.25
+            size of figure for matplotlib
+        Returns
+        -------
+        """
+        nsamples = len(x)
+        # aesthetics
+        plt.rcParams['xtick.labelsize'] = 12
+        plt.rcParams['ytick.labelsize'] = 12
+        plt.rcParams['font.size'] = 12
+
+        f = plt.figure(figsize=(figsize, figsize))
+        plt.subplots_adjust(left=0.2, right=0.8, bottom=0.2, top=0.8)
+
+        plt.xlabel(f'{xlabel} {quantity} / ' + units)
+        plt.ylabel(f'{ylabel} {quantity} / ' + units)
+
+        ax_min = min(min(x), min(y)) - 0.5
+        ax_max = max(max(x), max(y)) + 0.5
+        scale = [ax_min, ax_max]
+
+        plt.xlim(scale)
+        plt.ylim(scale)
+
+        # plots x-axis and y-axis
+        if origins:
+            plt.plot([0, 0], scale, 'gray')
+            plt.plot(scale, [0, 0], 'gray')
+
+        # plots x=y line
+        plt.plot(scale, scale, 'k:')
+        if guidelines:
+            small_dist = 0.5
+            # plots grey region around x=y line
+            plt.fill_between(scale, [ax_min - small_dist, ax_max - small_dist],
+                             [ax_min + small_dist, ax_max + small_dist],
+                             color='grey', alpha=0.2)
+            plt.fill_between(scale, [ax_min - small_dist * 2, ax_max - small_dist * 2],
+                             [ax_min + small_dist * 2, ax_max + small_dist * 2],
+                             color='grey', alpha=0.2)
+        # actual plotting
+        cm = plt.get_cmap('coolwarm')
+
+        if color is None:
+            color = np.abs(x - y)
+            # 2.372 kcal / mol = 4 RT
+            color = cm(color / 2.372)
+        plt.errorbar(x, y, xerr=xerr, yerr=yerr, color='gray', linewidth=0., elinewidth=2., zorder=1)
+        plt.scatter(x, y, color=color, s=10, marker='o', zorder=2)
+
+        # stats and title
+
+        long_title = f'{title} \n {target_name} '
+
+        plt.title(long_title, fontsize=12, loc='right', horizontalalignment='right', family='monospace')
+
+        if filename is None:
+            plt.show()
+        else:
+            plt.savefig(filename, bbox_inches='tight')
+        return f
+
+    def plot_DGs(self, method_name='', target_name='', title='', filename=None, **kwargs):
+
+        self._plot_master_plot(self.dataseries1[:, 0], self.dataseries2[:, 0],
+                          xerr=self.dataseries1[:, 1], yerr=self.dataseries2[:, 1], filename=filename,
+                          title=title, method_name=method_name, target_name=target_name, **kwargs)
 
     def _plot_bar_plot_no_dic_graph2(self, r1_weight, r2_weight, r3_weight, keys):
         r""" Obsolete do not use!!!
