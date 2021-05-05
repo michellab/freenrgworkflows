@@ -124,8 +124,8 @@ class NetworkAnalyser(object):
         # populate compound list:
         self._compoundList = list(graph.nodes())
         self._compoundList.sort()
-        if len(largest) is not len(self._compoundList):
-            warnings.warn('Provided network is not fully connected doing analysis on subgraph')
+        if len(largest) < len(self._compoundList):
+            warnings.warn('Provided network is disconnected. Doing analysis on subgraph.')
 
         # We only do the analysis for the largest connected set of nodes
         for node in largest:
@@ -672,7 +672,7 @@ class PerturbationGraph(object):
             if set(compound_order).issubset(ids):
                 ids = compound_order
             else:
-                print ("The list of compounds you provided does not match the ones stored in the pertubation network")
+                print ("The list of compounds you provided does not match the ones stored in the perturbation network")
                 print ("Compounds are:")
                 print (ids)
                 sys.exit(1)

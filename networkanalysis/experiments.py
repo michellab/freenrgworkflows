@@ -65,10 +65,12 @@ class ExperimentalData(object):
         -------
 
         """
-        if data_type not in ['k_D','IC50', 'pIC50', 'K_i']:
-            raise ValueError('The data_type you have specified is not recognised please choose from: k_D, IC50, pIC50, K_i')
+        if data_type not in ['k_D', 'IC50', 'pIC50', 'K_i']:
+            raise ValueError(
+                'The data_type you have specified is not recognised please choose from: k_D, IC50, pIC50, K_i')
         data = pd.read_csv(filename, comment=comments, delimiter=delimiter)
         error_list = []
+        error_list_kj = []
         error = None
         self._keys = []
         self._ic50s = []
@@ -78,28 +80,54 @@ class ExperimentalData(object):
         if data_type == 'IC50':
             if len(data.columns) == 2:
                 error = self._kTkcal * np.log(2)
+                error_kj = self._kTkJ * np.log(2)
             dG = []
+            dG_kj_mol = []
             for i in range(len(data)):
                 r = float(data.iloc[i, 1] / data.iloc[0, 1])
                 dG.append(self._kTkcal * np.log(r))
-
+                dG_kj_mol.append(self._kTkJ * np.log(r))
                 if error is None:
-                    error_list.append(data.iloc[i,2])
+                    error_list.append(data.iloc[i, 2])
+                    error_list_kj.append(data.iloc[i, 2])
                 else:
                     error_list.append(error)
+                    error_list_kj.append(error_kj)
             # Now we normalise the free energies
             dG = dG - np.mean(dG)
+            dG_kj_mol = dG_kj_mol - np.mean(dG_kj_mol)
             for i in range(len(data)):
-                self._DG_in_kcal.append({data.iloc[i,0]:dG[i], 'error':error_list[i]})
-
+                self._DG_in_kcal.append({data.iloc[i, 0]: dG[i], 'error': error_list[i]})
+                self._DG_in_kJ.append({data.iloc[i, 0]: dG_kj_mol[i], 'error': error_list_kj[i]})
 
         elif data_type == 'k_D':
-            raise NotImplementedError
+            if len(data.columns) == 2:
+                error = self._kTkcal * np.log(2)
+                error_kj = self._kTkJ * np.log(2)
+
+            dG = []
+            dG_kj_mol = []
+            for i in range(len(data)):
+                r = float(data.iloc[i, 1] / data.iloc[0, 1])
+                dG.append(self._kTkcal * np.log(r))
+                dG_kj_mol.append(self._kTkJ * np.log(r))
+                if error is None:
+                    error_list.append(data.iloc[i, 2])
+                    error_list_kj.append(data.iloc[i, 2])
+                else:
+                    error_list.append(error)
+                    error_list_kj.append(error_kj)
+            # Now we normalise the free energies
+            dG = dG - np.mean(dG)
+            dG_kj_mol = dG_kj_mol - np.mean(dG_kj_mol)
+            for i in range(len(data)):
+                self._DG_in_kcal.append({data.iloc[i, 0]: dG[i], 'error': error_list[i]})
+                self._DG_in_kJ.append({data.iloc[i, 0]: dG_kj_mol[i], 'error': error_list_kj[i]})
+
         elif data_type == 'pIC50':
             raise NotImplementedError
         elif data_type == 'k_i':
             raise NotImplementedError
-
 
     def compute_DDG_from_IC50s(self, filename, reference=None, smiles_string=False):
         r"""
