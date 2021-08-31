@@ -161,6 +161,88 @@ class NetworkAnalyser(object):
                 self._nlinks += 1
         if save_graph:
             self._graph = graph
+            
+    def add_data_to_graph_pandas(self, filename, delimiter=',', comments=None, source='lig_1', target='lig_2',
+                                  edge_attr=['freenrg', 'error'], save_graph=False):
+        r"""
+        Adds data to an existing graph from a csv file using pandas dataframe
+
+        Parameters:
+        -----------
+        filename : path
+            path to the csv file containing free energies
+            Usually of the type:
+            lig1,lig2,dG,ddG,engine
+            a,b,-10,0.3,SOMD
+
+        delimiter: string
+            delimiter used for csv file, default is ','
+
+        comments : string
+            comment lines can be identified with a String, e.g. '#'
+
+        source : string
+            title of first column if inferred from header overridden
+
+        target : string
+            title of the second column if inferred from header overridden
+
+        edge_atrr : list of strings
+            titles of the 3rd and 4th column
+        """
+        header, n_cols = self._identify_header(filename, comments=comments)
+
+        data = None
+        if header is None:
+            col_head = [source, target, edge_attr[0], edge_attr[1]]
+            col_diff = n_cols - len(col_head)
+            if col_diff == 0:
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, names=col_head)
+            elif col_diff == 1:
+                col_head.append('engine')
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, names=col_head)
+            elif col_diff > 1:
+                col_head.append('engine')
+                for x in range(col_diff - 1):
+                    col_head.append('not_needed_' + str(x))
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, names=col_head)
+            elif col_diff < 0:
+                raise ValueError("You don't have enough columns in your free energy perturbation results file")
+
+        else:
+            data = pd.read_csv(filename, delimiter=delimiter, comment=comments, header=header)
+
+        # Getting rid of any NANs, this may make a network disconnected
+        data = data.dropna()
+
+        # Now convert the pandas data frame to a networkx graph
+        newGraph = nx.from_pandas_edgelist(data, source=source, target=target, edge_attr=edge_attr,
+                                        create_using=nx.DiGraph())
+
+        averaged_edge_counter, added_edge_counter = 0, 0
+
+        if self._graph != None:
+            for u, v, w in newGraph.edges(data=True):
+                if self._graph.has_edge(u, v):
+
+                    # compute average freenrg and propagate error.
+                    z = self._graph.get_edge_data(u, v)
+                    mean_edge = np.mean([z['freenrg'], w['freenrg']])
+                    error = 0.5 * np.sqrt(z['error'] ** 2 + w['error'] ** 2)
+
+                    # replace the edge with new one.
+                    self._graph.remove_edge(u, v)
+                    self._graph.add_edge(u, v, weight=mean_edge, error=error)
+
+                    averaged_edge_counter += 1
+
+                else:
+                    self._graph.add_edge(u, v, w)
+                    added_edge_counter += 1
+        else:
+            raise ValueError("No graph present to add data to. Use read_perturbations_pandas() instead.")
+
+        print(f"Added additional data to {averaged_edge_counter} edges; added {added_edge_counter} new edges.")
 
     def read_perturbations(self, filename, delimiter=',', comments='#', nodetype=str,
                            data=(('weight', float), ('error', float))):
