@@ -410,6 +410,7 @@ class NetworkAnalyser(object):
         dG = dG - np.mean(dG)
 
         h = self._error_estimate()
+
         err = np.zeros(shape=[len(dG), self.iterations], dtype="float64")
         for r in range(self.iterations):
             # Compute eb, which is b with random noise sized by the hysteresis
@@ -429,6 +430,7 @@ class NetworkAnalyser(object):
         # Compute standard deviations for each row of err:
         # use ddof=1 for sample estimate rather than population estimate
         std_dG = [np.std(err[i, :], ddof=1) for i in range(len(dG))]
+
         for c_idx in range(len(self._compoundList)):
             entry = {self._compoundList[c_idx]: dG[c_idx], 'error': std_dG[c_idx]}
             self._free_energies.append(entry)
@@ -443,7 +445,7 @@ class NetworkAnalyser(object):
             for mol2 in self._ddG_edges[mol1]:
                 # Only handle links one way round: if both links present then only take one of them
                 if (mol1 < mol2 or mol2 not in self._ddG_edges or mol1 not in self._ddG_edges[mol2]):
-                    h.append(self._get_hysteresis(mol1, mol2, minh) + 0.4)
+                    h.append((self._get_hysteresis(mol1, mol2, minh)))
         return h
 
     def _get_hysteresis(self, mol1, mol2, minh=0.4):
@@ -458,7 +460,13 @@ class NetworkAnalyser(object):
             eng2 = self._ddG_edges[mol2][mol1]
         except KeyError:
             return minh
-        return max(minh, abs(eng1 + eng2))
+
+        # Compute relative hysteresis. This way high ddG edges result in the same hysteresis
+        # penalty as low ddG edges, instead of high ddG edges being over-penalised.
+        hys = eng1 + eng2
+        rel_hys = hys/max(abs(eng1), abs(eng2))
+
+        return max(minh, abs(rel_hys))
 
     def _get_avg_weight(self, mol1, mol2):
         """ Given two keys, return the average weight of
