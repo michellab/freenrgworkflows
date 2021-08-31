@@ -228,16 +228,17 @@ class NetworkAnalyser(object):
                     # compute average freenrg and propagate error.
                     z = self._graph.get_edge_data(u, v)
                     mean_edge = np.mean([z['freenrg'], w['freenrg']])
-                    error = 0.5 * np.sqrt(z['error'] ** 2 + w['error'] ** 2)
+                    prop_error = 0.5 * np.sqrt(z['error'] ** 2 + w['error'] ** 2)
 
                     # replace the edge with new one.
-                    self._graph.remove_edge(u, v)
-                    self._graph.add_edge(u, v, weight=mean_edge, error=error)
+                    self._ddG_edges[u][v] = mean_edge
+                    self._weights[u][v] = prop_error
 
                     averaged_edge_counter += 1
 
                 else:
-                    self._graph.add_edge(u, v, w)
+                    self._ddG_edges[u][v] = w['freenrg']
+                    self._weights[u][v] = w['error']
                     added_edge_counter += 1
         else:
             raise ValueError("No graph present to add data to. Use read_perturbations_pandas() instead.")
@@ -385,6 +386,8 @@ class NetworkAnalyser(object):
             analysis and return the standard deviation of each value as well.
         """
 
+        self._free_energies = []
+
         # Now we want so solve A'*W*A dG = A'*W b - see the Wikipedia entry on weighted
         # least squares for the gory details
         A = self._compute_adjacency_matrix()
@@ -520,11 +523,9 @@ class NetworkAnalyser(object):
     def freeEnergyInKcal(self):
         """ Return the free energies as a list of dictionaries
         """
-        if not self._free_energies:
-            self._compute_free_energies()
-            return self._free_energies
-        else:
-            return self._free_energies
+
+        self._compute_free_energies()
+        return self._free_energies
 
     @property
     def compoundList(self):
