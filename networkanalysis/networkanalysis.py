@@ -59,7 +59,7 @@ class NetworkAnalyser(object):
         return 'infer' if sim < th else None, columns
 
     def read_perturbations_pandas(self, filename, delimiter=',', comments=None, source='lig_1', target='lig_2',
-                                  edge_attr=['freenrg', 'error'], save_graph=False):
+                                  edge_attr=['freenrg', 'error'], save_graph=True):
         """ Reads a networkx compatible csv file using pandas dataframes
 
         Parameters:
@@ -161,9 +161,9 @@ class NetworkAnalyser(object):
                 self._nlinks += 1
         if save_graph:
             self._graph = graph
-            
+
     def add_data_to_graph_pandas(self, filename, delimiter=',', comments=None, source='lig_1', target='lig_2',
-                                  edge_attr=['freenrg', 'error'], save_graph=False):
+                                  edge_attr=['freenrg', 'error'], save_graph=True):
         r"""
         Adds data to an existing graph from a csv file using pandas dataframe
 
