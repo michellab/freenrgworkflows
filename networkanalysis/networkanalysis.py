@@ -32,7 +32,8 @@ import pandas as pd
 
 class NetworkAnalyser(object):
 
-    def __init__(self, use_weights=True, target_compound=None, iterations=10000, verbose=False):
+    def __init__(self, use_weights=True, target_compound=None, iterations=10000, verbose=False, 
+                balance_hysteresis=True):
         self._weights = {}
         self._ddG_edges = {}
         self._compoundList = None
@@ -43,6 +44,9 @@ class NetworkAnalyser(object):
         self.iterations = iterations
         self._verbose = verbose
         self._graph = None
+
+        # if True, use relative hysteresis penalty. If False, use absolute.
+        self.balance_hysteresis = balance_hysteresis
 
     def _identify_header(self, path, n=5, th=0.9, comments=None):
         """
@@ -59,7 +63,7 @@ class NetworkAnalyser(object):
         return 'infer' if sim < th else None, columns
 
     def read_perturbations_pandas(self, filename, delimiter=',', comments=None, source='lig_1', target='lig_2',
-                                  edge_attr=['freenrg', 'error'], save_graph=False):
+                                  edge_attr=['freenrg', 'error'], save_graph=True):
         """ Reads a networkx compatible csv file using pandas dataframes
 
         Parameters:
@@ -161,6 +165,89 @@ class NetworkAnalyser(object):
                 self._nlinks += 1
         if save_graph:
             self._graph = graph
+
+    def add_data_to_graph_pandas(self, filename, delimiter=',', comments=None, source='lig_1', target='lig_2',
+                                  edge_attr=['freenrg', 'error'], save_graph=True):
+        r"""
+        Adds data to an existing graph from a csv file using pandas dataframe
+
+        Parameters:
+        -----------
+        filename : path
+            path to the csv file containing free energies
+            Usually of the type:
+            lig1,lig2,dG,ddG,engine
+            a,b,-10,0.3,SOMD
+
+        delimiter: string
+            delimiter used for csv file, default is ','
+
+        comments : string
+            comment lines can be identified with a String, e.g. '#'
+
+        source : string
+            title of first column if inferred from header overridden
+
+        target : string
+            title of the second column if inferred from header overridden
+
+        edge_atrr : list of strings
+            titles of the 3rd and 4th column
+        """
+        header, n_cols = self._identify_header(filename, comments=comments)
+
+        data = None
+        if header is None:
+            col_head = [source, target, edge_attr[0], edge_attr[1]]
+            col_diff = n_cols - len(col_head)
+            if col_diff == 0:
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, names=col_head)
+            elif col_diff == 1:
+                col_head.append('engine')
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, names=col_head)
+            elif col_diff > 1:
+                col_head.append('engine')
+                for x in range(col_diff - 1):
+                    col_head.append('not_needed_' + str(x))
+                data = pd.read_csv(filename, delimiter=delimiter, comment=comments, names=col_head)
+            elif col_diff < 0:
+                raise ValueError("You don't have enough columns in your free energy perturbation results file")
+
+        else:
+            data = pd.read_csv(filename, delimiter=delimiter, comment=comments, header=header)
+
+        # Getting rid of any NANs, this may make a network disconnected
+        data = data.dropna()
+
+        # Now convert the pandas data frame to a networkx graph
+        newGraph = nx.from_pandas_edgelist(data, source=source, target=target, edge_attr=edge_attr,
+                                        create_using=nx.DiGraph())
+
+        averaged_edge_counter, added_edge_counter = 0, 0
+
+        if self._graph != None:
+            for u, v, w in newGraph.edges(data=True):
+                if self._graph.has_edge(u, v):
+
+                    # compute average freenrg and propagate error.
+                    z = self._graph.get_edge_data(u, v)
+                    mean_edge = np.mean([z['freenrg'], w['freenrg']])
+                    prop_error = 0.5 * np.sqrt(z['error'] ** 2 + w['error'] ** 2)
+
+                    # replace the edge with new one.
+                    self._ddG_edges[u][v] = mean_edge
+                    self._weights[u][v] = prop_error
+
+                    averaged_edge_counter += 1
+
+                else:
+                    self._ddG_edges[u][v] = w['freenrg']
+                    self._weights[u][v] = w['error']
+                    added_edge_counter += 1
+        else:
+            raise ValueError("No graph present to add data to. Use read_perturbations_pandas() instead.")
+
+        print(f"Added additional data to {averaged_edge_counter} edges; added {added_edge_counter} new edges.")
 
     def read_perturbations(self, filename, delimiter=',', comments='#', nodetype=str,
                            data=(('weight', float), ('error', float))):
@@ -303,6 +390,8 @@ class NetworkAnalyser(object):
             analysis and return the standard deviation of each value as well.
         """
 
+        self._free_energies = []
+
         # Now we want so solve A'*W*A dG = A'*W b - see the Wikipedia entry on weighted
         # least squares for the gory details
         A = self._compute_adjacency_matrix()
@@ -325,6 +414,7 @@ class NetworkAnalyser(object):
         dG = dG - np.mean(dG)
 
         h = self._error_estimate()
+
         err = np.zeros(shape=[len(dG), self.iterations], dtype="float64")
         for r in range(self.iterations):
             # Compute eb, which is b with random noise sized by the hysteresis
@@ -344,6 +434,7 @@ class NetworkAnalyser(object):
         # Compute standard deviations for each row of err:
         # use ddof=1 for sample estimate rather than population estimate
         std_dG = [np.std(err[i, :], ddof=1) for i in range(len(dG))]
+
         for c_idx in range(len(self._compoundList)):
             entry = {self._compoundList[c_idx]: dG[c_idx], 'error': std_dG[c_idx]}
             self._free_energies.append(entry)
@@ -358,7 +449,7 @@ class NetworkAnalyser(object):
             for mol2 in self._ddG_edges[mol1]:
                 # Only handle links one way round: if both links present then only take one of them
                 if (mol1 < mol2 or mol2 not in self._ddG_edges or mol1 not in self._ddG_edges[mol2]):
-                    h.append(self._get_hysteresis(mol1, mol2, minh) + 0.4)
+                    h.append((self._get_hysteresis(mol1, mol2, minh)))
         return h
 
     def _get_hysteresis(self, mol1, mol2, minh=0.4):
@@ -373,7 +464,17 @@ class NetworkAnalyser(object):
             eng2 = self._ddG_edges[mol2][mol1]
         except KeyError:
             return minh
-        return max(minh, abs(eng1 + eng2))
+
+        # Compute relative hysteresis. This way high ddG edges result in the same hysteresis
+        # penalty as low ddG edges, instead of high ddG edges being over-penalised.
+        hys = eng1 + eng2
+
+        rel_hys = hys/max(abs(eng1), abs(eng2))
+        
+        if self.balance_hysteresis:
+            return max(minh, abs(rel_hys))
+        else:
+            return max(minh, abs(hys))
 
     def _get_avg_weight(self, mol1, mol2):
         """ Given two keys, return the average weight of
@@ -435,14 +536,12 @@ class NetworkAnalyser(object):
         return self._weights
 
     @property
-    def freeEnergyInKcal(self):
+    def freeEnergyInKcal(self, balance_hysteresis=True):
         """ Return the free energies as a list of dictionaries
         """
-        if not self._free_energies:
-            self._compute_free_energies()
-            return self._free_energies
-        else:
-            return self._free_energies
+
+        self._compute_free_energies()
+        return self._free_energies
 
     @property
     def compoundList(self):
