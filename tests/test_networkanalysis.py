@@ -129,6 +129,17 @@ def convert_energy_list(energies):
         y.append(e['error'])
     return x, y
 
+def test_add_replicates(nA):
+    nA.read_perturbations_pandas('tests/io/replicate_1.csv',comments='#')
+    energies1 = nA.freeEnergyInKcal
+    x1, y1 = convert_energy_list(energies1)
+
+    nA.add_data_to_graph_pandas('tests/io/replicate_2.csv',comments='#')
+    energies2 = nA.freeEnergyInKcal
+    x2, y2 = convert_energy_list(energies1)
+
+    assert (x1 != x2) and (y1 != y2)
+
 
 @pytest.fixture
 def pG():
