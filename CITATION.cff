@@ -16,4 +16,6 @@ authors:
     family-names: Jenke    
   - given-names: Julien
     family-names: Michel
+repository-code: >-
+  https://github.com/michellab/freenrgworkflows/tree/devel
 license: CC-BY-SA-2.0
