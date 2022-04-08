@@ -49,3 +49,6 @@ summary_r1.csv is an collated output of analyse_freenrg mbar from [SOMD](https:/
 ## Questions, Comments, Docs
 
 Contact one of the authors.
+
+## License
+This work is licensed under [Attribution-ShareAlike 2.0 Generic (CC BY-SA 2.0)](https://creativecommons.org/licenses/by-sa/2.0/).
