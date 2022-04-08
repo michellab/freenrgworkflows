@@ -44,7 +44,10 @@ python run_networkanalysis.py ../tests/io/summary_r1.csv --target_compound FXR45
 summary_r1.csv is an collated output of analyse_freenrg mbar from [SOMD](https://github.com/michellab/Sire), the target compound is randomly selected. The output file can be anything really, such as blub.dat written to the computers desktop. If you want to compare experiments to simulations you will need to provide a file containing IC50s on the commandline or kDs with the API. The flag --generate_notebook will generate a default jupyter notebook running the analysis from a notebook including plots comparing the experimental and computed free energies. The generated notebook can be opened using `jupyter notebook ~/Desktop/blub.ipynb`
 
 ## Authors
-- Antonia Mey [antonia.mey@ed.ac.uk]
+- Antonia Mey [antonia.mey@ed.ac.uk]: Maintainer
+- Paolo Tosco
+- Jenke Scheen
+- Julien Michel
 
 ## Questions, Comments, Docs
 
