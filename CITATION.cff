@@ -1,0 +1,19 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: FreeEnergyNetworkAnalysis
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Antonia
+    family-names: Mey
+  - given-names: Paolo
+    family-names: Tosco
+  - given-names: Scheen
+    family-names: Jenke    
+  - given-names: Julien
+    family-names: Michel
+license: CC-BY-SA-2.0
