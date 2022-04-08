@@ -45,6 +45,7 @@ summary_r1.csv is an collated output of analyse_freenrg mbar from [SOMD](https:/
 
 ## Authors
 - Antonia Mey [antonia.mey@ed.ac.uk]: Maintainer
+- Mark Mackey
 - Paolo Tosco
 - Jenke Scheen
 - Julien Michel
